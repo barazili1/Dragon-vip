@@ -747,7 +747,12 @@ export default function App() {
                   </div>
                   <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Install Platform</span>
                 </div>
-                <div className="p-5 glass-card rounded-2xl flex items-center justify-between border-gold/10 group hover:border-gold/40 transition-all hover:bg-white/5 cursor-pointer active:scale-[0.98]">
+                <a 
+                  href={selectedPlatform?.toUpperCase() === 'MELBET' ? "https://melbetegypt.com/ar/mobile#ios" : "https://eg-1xbet.com/ar/mobile"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-5 glass-card rounded-2xl flex items-center justify-between border-gold/10 group hover:border-gold/40 transition-all hover:bg-white/5 cursor-pointer active:scale-[0.98] block"
+                >
                   <div className="flex items-center space-x-4">
                     <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
                       <Download className="w-5 h-5 text-gold-muted group-hover:text-gold transition-colors" />
@@ -757,7 +762,7 @@ export default function App() {
                     </span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-gold transition-colors" />
-                </div>
+                </a>
               </motion.div>
 
               {/* Step 5 */}

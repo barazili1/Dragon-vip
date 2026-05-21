@@ -26,7 +26,9 @@ import {
   ExternalLink,
   ChevronRight,
   Youtube,
-  Send
+  Send,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -50,9 +52,9 @@ const BackgroundVideo = () => (
       loop
       muted
       playsInline
-      className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 object-cover opacity-30"
+      className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 object-cover opacity-90"
     >
-      <source src="https://www.image2url.com/r2/default/videos/1778247994938-b647f361-1d64-48f7-8fbe-5070448f99c4.mp4" type="video/mp4" />
+      <source src="https://www.image2url.com/r2/default/videos/1779363577381-857ef662-4831-4d01-9710-4a13a1473c16.mp4" type="video/mp4" />
     </video>
     <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
     <div className="absolute inset-0 bg-linear-to-b from-black/20 via-transparent to-black" />
@@ -87,10 +89,209 @@ const Logo = ({ className }: { className?: string }) => (
   </div>
 );
 
+interface RenderSplashProps {
+  onComplete: () => void;
+}
+
+const RenderSplash = ({ onComplete }: RenderSplashProps) => {
+  const [progress, setProgress] = useState(0);
+  const [bootStep, setBootStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        const jump = Math.floor(Math.random() * 8) + 4; // realistic ticks
+        return Math.min(100, prev + jump);
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (progress < 30) setBootStep(0);
+    else if (progress < 60) setBootStep(1);
+    else if (progress < 90) setBootStep(2);
+    else setBootStep(3);
+  }, [progress]);
+
+  useEffect(() => {
+    if (progress >= 100) {
+      const delay = setTimeout(() => {
+        onComplete();
+      }, 600);
+      return () => clearTimeout(delay);
+    }
+  }, [progress, onComplete]);
+
+  const bootMessages = [
+    "ESTABLISHING SECURE COGNITIVE BRIDGE...",
+    "TUNING NEURAL NETWORKS...",
+    "INJECTING CHRONO-ODDS PREDICTION LAYERS...",
+    "FIREWALL ENGAGED. SYSTEM FULLY OPERATIONAL."
+  ];
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-black relative overflow-hidden font-sans select-none">
+      {/* Cinematic Video Background Layer */}
+      <BackgroundVideo />
+
+      {/* Ambient Pulsing Gold Light Orbs */}
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.12)_0%,transparent_70%)] animate-pulse pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.08)_0%,transparent_70%)] pointer-events-none" />
+
+      {/* Cyberpunk Decorative Corner Frame Accents */}
+      <div className="absolute inset-8 border border-white/[0.02] pointer-events-none rounded-[2rem]">
+        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-gold/30 rounded-tl-xl" />
+        <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-gold/30 rounded-tr-xl" />
+        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-gold/30 rounded-bl-xl" />
+        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-gold/30 rounded-br-xl" />
+      </div>
+
+      {/* Core Loading Container */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 flex flex-col items-center max-w-sm w-full"
+      >
+        {/* Futuristic Double Concentric Rings + Logo Frame */}
+        <div className="relative mb-12">
+          {/* Outer Slow Rotating Dotted Ring */}
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+            className="absolute -inset-8 rounded-full border border-dashed border-gold/20"
+          />
+          {/* Inner Fast Rotating Segment Ring */}
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+            className="absolute -inset-4 rounded-full border-2 border-t-gold/40 border-r-transparent border-b-gold/10 border-l-transparent"
+          />
+          {/* Main Logo Container */}
+          <Logo className="scale-110 relative z-20" />
+          
+          {/* Mini Premium Identity Seal top-right of the logo */}
+          <div className="absolute -top-3 -right-3 z-30 bg-black/80 border border-gold/40 rounded-full py-0.5 px-2 flex items-center gap-1 shadow-lg shadow-black/80">
+            <ShieldCheck className="w-2.5 h-2.5 text-gold" strokeWidth={3} />
+            <span className="text-[7px] font-mono tracking-widest text-gold font-black">SECURE</span>
+          </div>
+        </div>
+
+        {/* Premium Branding Interface */}
+        <div className="text-center space-y-3 mb-10">
+          <div className="flex items-center justify-center space-x-2">
+            <span className="text-gray-600 font-mono text-[9px] tracking-widest">[</span>
+            <motion.span 
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-gold font-mono text-[8.5px] tracking-[0.45em] font-black uppercase"
+            >
+              ALGORITHM ENGINE ACTIVE
+            </motion.span>
+            <span className="text-gray-600 font-mono text-[9px] tracking-widest">]</span>
+          </div>
+
+          <div className="flex flex-col select-none">
+            <h1 className="text-5xl font-display font-black tracking-[0.16em] gold-text-gradient drop-shadow-[0_0_35px_rgba(255,215,0,0.45)] leading-tight">
+              DRAGON
+            </h1>
+            <div className="flex items-center justify-center gap-2 mt-px">
+              <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-gold/40" />
+              <span className="text-sm font-mono tracking-[0.6em] text-white/90 font-black pl-[0.6em]">VIP</span>
+              <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-gold/40" />
+            </div>
+          </div>
+        </div>
+
+        {/* Boot telemetry checklist display (Fades items in as bootStep rises) */}
+        <div className="w-full bg-white/[0.02] border border-white/5 rounded-2xl p-4 mb-8 space-y-2.5 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center justify-between text-[8px] font-mono tracking-wider font-bold">
+            <span className="text-gray-500">BOOT SEQUENCE COMPLIANCE</span>
+            <span className="text-gold-muted uppercase">{progress}% INTEGRATED</span>
+          </div>
+          
+          <div className="h-[1px] bg-white/5 w-full" />
+
+          <div className="space-y-1.5 text-left font-mono">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                <span className={`w-1 h-1 rounded-full ${progress >= 30 ? 'bg-gold animate-ping' : 'bg-white/10'}`} />
+                SHIELD PROTOCOL VERIFICATION
+              </span>
+              <span className={`text-[8px] font-black ${progress >= 30 ? 'text-gold' : 'text-white/20'}`}>
+                {progress >= 30 ? "PASSED" : "PENDING"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                <span className={`w-1 h-1 rounded-full ${progress >= 60 ? 'bg-gold animate-ping' : 'bg-white/10'}`} />
+                NEURAL OPTIMIZER ENGINE
+              </span>
+              <span className={`text-[8px] font-black ${progress >= 60 ? 'text-gold' : 'text-white/20'}`}>
+                {progress >= 60 ? "ENABLED" : "PENDING"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-gray-400 flex items-center gap-1.5">
+                <span className={`w-1 h-1 rounded-full ${progress >= 90 ? 'bg-gold animate-ping' : 'bg-white/10'}`} />
+                CHRONO-ODDS ALGORITHMS
+              </span>
+              <span className={`text-[8px] font-black ${progress >= 90 ? 'text-gold' : 'text-white/20'}`}>
+                {progress >= 90 ? "CALIBRATED" : "PENDING"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Luxury Floating Loading Bar Container */}
+        <div className="w-full space-y-3">
+          <div className="flex justify-between items-center text-[10px] font-mono tracking-widest px-1 font-bold">
+            <motion.span 
+              key={bootStep}
+              initial={{ opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-gold-muted text-[8px] text-left max-w-[80%] whitespace-nowrap overflow-hidden text-ellipsis uppercase"
+            >
+              {bootMessages[bootStep]}
+            </motion.span>
+            <span className="text-gold font-black tabular-nums transition-all text-sm">{progress}%</span>
+          </div>
+
+          {/* Custom Glowing Loading Bar */}
+          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative border border-white/5">
+            <div 
+              style={{ width: `${progress}%` }}
+              className="h-full bg-gradient-to-r from-gold/50 via-gold to-gold-bright transition-all duration-100 ease-out relative rounded-full"
+            >
+              {/* Visual light shine effect inside the progress */}
+              <div className="absolute inset-0 animate-shimmer bg-linear-to-r from-transparent via-white/50 to-transparent bg-[length:200%_100%]" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gold-bright blur-sm" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Global Infrastructure Telemetry Signature on Footer */}
+      <div className="absolute bottom-6 flex flex-col items-center text-[8px] text-gray-600 font-mono tracking-widest gap-1">
+        <span>DRAGON VIP CLOUD TERMINAL v12.4</span>
+        <span className="opacity-45">ENHANCED DECRYPTION PROTOCOL ACTIVE</span>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('SPLASH');
   const [onlineUsers, setOnlineUsers] = useState(1532);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [userId, setUserId] = useState('');
   const [isMaintenanceActive, setIsMaintenanceActive] = useState(false);
   const [licenseKey, setLicenseKey] = useState('');
@@ -214,13 +415,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Splash logic
-  useEffect(() => {
-    if (currentScreen === 'SPLASH') {
-      const timer = setTimeout(() => setCurrentScreen('LOGIN'), 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [currentScreen]);
+
 
   const handleLogin = () => {
     if (password === 'FETCH1') {
@@ -360,149 +555,139 @@ export default function App() {
     }
   };
 
-  // Views
-  const renderSplash = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-black relative overflow-hidden">
-      <BackgroundVideo />
-      
-      {/* Background Glossy Effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.1)_0%,transparent_70%)]" />
-      
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className="relative z-10 flex flex-col items-center"
-      >
-        <Logo className="mb-12 scale-125" />
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, duration: 1 }}
-          className="text-center"
-        >
-          <div className="flex items-center justify-center space-x-4 mb-2">
-            <h1 className="text-5xl font-display font-bold gold-text-gradient tracking-[0.1em] drop-shadow-[0_0_20px_rgba(255,215,0,0.4)]">
-              DRAGON
-            </h1>
-            <h1 className="text-5xl font-display font-bold gold-text-gradient tracking-[0.1em] drop-shadow-[0_0_20px_rgba(255,215,0,0.4)]">
-              VIP
-            </h1>
-          </div>
-          <p className="text-gold/40 text-[10px] uppercase tracking-[0.5em] font-bold">Universal Premium AI</p>
-        </motion.div>
-      </motion.div>
-      
-      <div className="absolute bottom-20 w-64 space-y-4">
-        <div className="flex justify-between items-center text-[10px] font-mono text-gold-muted font-bold tracking-widest px-1">
-          <span>INITIALIZING</span>
-          <motion.span
-            animate={{ opacity: [0, 1, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            SYSTEM_ONLINE
-          </motion.span>
-        </div>
-        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden relative">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: '100%' }}
-            transition={{ duration: 3, ease: "easeInOut" }}
-            className="h-full gold-gradient relative"
-          >
-            <div className="absolute inset-0 animate-shimmer bg-linear-to-r from-transparent via-white/40 to-transparent bg-[length:200%_100%]" />
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  );
+
+
 
   const renderLogin = () => (
-    <div className="flex flex-col min-h-screen p-6 pt-12 max-w-md mx-auto relative overflow-hidden bg-black font-sans">
+    <div className="flex flex-col h-screen h-[100dvh] p-5 max-w-md mx-auto relative overflow-hidden bg-black font-sans select-none justify-between">
       <BackgroundVideo />
       
-      {/* Header */}
-      <div className="flex justify-between items-center mb-12 relative z-10">
-        <div className="flex items-center space-x-2 glass-card py-1.5 px-4 rounded-full">
+      {/* Absolute Ambient Soft Glows */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Luxury Minimal Header */}
+      <div className="flex justify-between items-center relative z-10 px-1 mt-1">
+        <div className="flex items-center space-x-2 bg-black/40 backdrop-blur-md py-1 px-3 rounded-full border border-white/[0.04]">
+          <span className="w-1.5 h-1.5 rounded-full bg-gold/85 animate-pulse" />
           <motion.span 
             key={onlineUsers}
-            initial={{ y: 5, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="text-xs font-mono text-gold-muted"
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[9px] font-mono font-bold text-gold-muted uppercase tracking-wider"
           >
-            Users Online: {onlineUsers.toLocaleString()}
+            LIVE_ROOM: {onlineUsers.toLocaleString()}
           </motion.span>
         </div>
-        <div className="flex items-center space-x-2 glass-card py-1.5 px-4 rounded-full">
-          <motion.div 
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-2 h-2 bg-green-500 rounded-full gold-glow"
-          />
-          <span className="text-[10px] uppercase font-bold tracking-tighter text-gray-400">Status: Active</span>
+        
+        <div className="flex items-center space-x-2 bg-black/40 backdrop-blur-md py-1 px-3 rounded-full border border-white/[0.04]">
+          <ShieldCheck className="w-3 h-3 text-gold-muted" />
+          <span className="text-[8px] font-mono font-black text-gray-400 uppercase tracking-widest">SECURE PORTAL</span>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center relative z-10">
-        <Logo className="scale-75 mb-4" />
-        <h2 className="text-2xl font-display font-bold gold-text-gradient mb-12">AUTHENTICATION</h2>
+      {/* Center Body - containing logo, branding, and glass card */}
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full px-1 my-auto max-h-[62%] sm:max-h-[68%]">
+        {/* Logo and Premium Branding Column */}
+        <div className="text-center space-y-2.5 mb-5 sm:mb-6">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-gold/10 rounded-full blur-xl scale-125 animate-pulse" />
+            <Logo className="scale-75 sm:scale-85 relative z-10" />
+          </div>
+          
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-display font-black tracking-[0.2em] gold-text-gradient uppercase leading-none">
+              DRAGON ACCESS
+            </h2>
+            <p className="text-gray-500 text-[8px] sm:text-[9px] uppercase tracking-[0.3em] font-medium max-w-xs mx-auto">
+              ENTER PRIVATE SECURITY DECRYPT KEY
+            </p>
+          </div>
+        </div>
 
-        <div className="w-full space-y-6">
+        {/* Quiet Luxury Glass Input Card */}
+        <div className="w-full bg-white/[0.02] border border-white/10 rounded-[2rem] p-5 sm:p-7 space-y-5 sm:space-y-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] backdrop-blur-xl relative overflow-hidden group">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+          
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest text-gold-muted px-1">Access Password</label>
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[8px] sm:text-[9px] font-mono uppercase tracking-[0.2em] text-gold-muted font-bold">
+                ACCESS PASSWORD
+              </label>
+              <span className="text-[7px] sm:text-[8px] font-mono text-gray-500 uppercase tracking-wider">REQUIRED</span>
+            </div>
+            
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-muted" />
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 p-1 bg-black/40 border border-white/5 rounded-lg text-gold-muted">
+                <Lock className="w-3 h-3" />
+              </div>
               <input 
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••••••"
-                className="w-full bg-white/5 border border-gold/20 rounded-2xl py-4 pl-12 pr-4 text-gold placeholder:text-gold/20 focus:outline-none focus:border-gold/50 transition-all"
+                placeholder="PRO-DECRYPT-KEY"
+                className="w-full bg-black/60 border border-white/10 rounded-xl py-3 pl-11 pr-10 text-gold font-mono text-xs placeholder:text-gray-700 focus:outline-none focus:border-gold/40 focus:bg-black/80 transition-all font-bold tracking-widest text-[11px]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-gold transition-colors focus:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-3.5 h-3.5" />
+                ) : (
+                  <Eye className="w-3.5 h-3.5" />
+                )}
+              </button>
             </div>
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01, y: -1 }}
+            whileTap={{ scale: 0.99 }}
             onClick={handleLogin}
-            className="w-full gold-gradient py-4 rounded-2xl font-bold text-black gold-glow-strong flex items-center justify-center space-x-2"
+            className="w-full py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-gold/90 via-gold to-gold-bright text-black font-black text-xs tracking-[0.15em] shadow-lg shadow-gold/10 hover:shadow-gold/25 transition-all flex items-center justify-center space-x-2 animate-shimmer bg-[length:200%_100%]"
           >
-            <span>LOGIN</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>DECRYPT AND ENTER</span>
+            <ArrowRight className="w-3 h-3" strokeWidth={2.5} />
           </motion.button>
         </div>
+      </div>
 
-        <div className="mt-12 text-center space-y-2">
-          <p className="text-gray-500 text-sm">Don't have a password?</p>
+      {/* Minimal Quiet Luxury Social and Password Access Links */}
+      <div className="mt-4 sm:mt-6 text-center space-y-4 sm:space-y-5 w-full relative z-10 pb-2">
+        <div className="space-y-1">
+          <p className="text-gray-650 text-[10px] font-medium text-gray-500">Do not possess an active authorization key?</p>
           <button 
             onClick={() => setCurrentScreen('CONDITION')}
-            className="text-gold font-bold text-sm underline underline-offset-4 decoration-gold/30 hover:decoration-gold"
+            className="text-gold font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:text-gold-bright transition-colors border-b border-gold/20 pb-0.5 hover:border-gold/60 transition-all font-mono"
           >
-            Get Password
+            Request Password Access
           </button>
-          
-          <div className="flex justify-center space-x-6 pt-6">
+        </div>
+        
+        <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/[0.04] w-full">
+          <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Connect Channels</span>
+          <div className="h-[1px] bg-gradient-to-r from-white/[0.05] to-transparent flex-1" />
+          <div className="flex items-center gap-2">
             <motion.a 
-              whileHover={{ scale: 1.1, y: -2 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               href="https://t.me/THEAGLE2" 
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 bg-gold/5 rounded-2xl border border-gold/20 text-gold hover:bg-gold/10 hover:border-gold/40 transition-all gold-glow-sm"
+              className="p-2.5 bg-white/[0.02] rounded-xl border border-white/5 text-gold-muted hover:border-gold/30 hover:bg-gold/5 transition-all"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-3.5 h-3.5" />
             </motion.a>
             <motion.a 
-              whileHover={{ scale: 1.1, y: -2 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               href="https://youtube.com/@dragon-p8k6q?si=OjKe5BmJbxCnTZx7" 
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 bg-gold/5 rounded-2xl border border-gold/20 text-gold hover:bg-gold/10 hover:border-gold/40 transition-all gold-glow-sm"
+              className="p-2.5 bg-white/[0.02] rounded-xl border border-white/5 text-gold-muted hover:border-gold/30 hover:bg-gold/5 transition-all"
             >
-              <Youtube className="w-5 h-5" />
+              <Youtube className="w-3.5 h-3.5" />
             </motion.a>
           </div>
         </div>
@@ -981,12 +1166,12 @@ export default function App() {
         <svg className="w-40 h-40 -rotate-90">
           <circle 
             cx="80" cy="80" r="72" 
-            stroke="rgba(255, 215, 0, 0.1)" 
+            stroke="rgba(255, 52, 52, 0.1)" 
             strokeWidth="6" fill="none" 
           />
           <motion.circle 
             cx="80" cy="80" r="72" 
-            stroke="#FFD700" 
+            stroke="#FF3434" 
             strokeWidth="6" fill="none"
             strokeDasharray="452"
             initial={{ strokeDashoffset: 452 }}
@@ -1088,82 +1273,208 @@ export default function App() {
         ))}
       </div>
 
-      <div className="flex-1 p-6 flex flex-col justify-center space-y-6 relative z-10">
-        {/* Odd Display - Scaled Down */}
-        <div className="text-center scale-90">
+      <div className="flex-1 p-5 flex flex-col justify-center space-y-5 relative z-10">
+        {/* Elite Cyberpunk Instrumentation Panel */}
+        <div className="text-center relative">
+          <div className="absolute inset-0 bg-gold/5 rounded-[2rem] blur-2xl pointer-events-none" />
           <motion.div
-            animate={isPredicting ? { scale: [1, 1.05, 1] } : {}}
+            animate={isPredicting ? { 
+              scale: [1, 1.02, 1],
+              boxShadow: [
+                "0 0 15px rgba(255, 52, 52, 0.15)",
+                "0 0 35px rgba(255, 52, 52, 0.35)",
+                "0 0 15px rgba(255, 52, 52, 0.15)"
+              ]
+            } : {}}
             transition={{ repeat: Infinity, duration: 1.5 }}
-            className="inline-block glass-card px-6 py-3 rounded-2xl border-gold/40 gold-glow"
+            className="inline-block w-full bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl relative overflow-hidden"
           >
-            <span className="text-gold-muted text-[10px] uppercase tracking-[0.3em] font-bold mb-1 block">Expected Odd</span>
-            <h2 className="text-3xl font-display font-bold gold-text-gradient">
-              {isPredicting ? '...' : predictionResult ? `x${predictionResult.toFixed(2)}` : 'x0.00'}
-            </h2>
+            {/* Top scanning header */}
+            <div className="flex items-center justify-between text-[8px] font-mono tracking-widest text-gray-400 mb-3 px-1 border-b border-white/[0.04] pb-2">
+              <span className="flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-gold animate-ping" />
+                DRAGON ALGORITHM V12.4
+              </span>
+              <span className="text-gold font-bold">STABILITY: 99.82%</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-left space-y-0.5">
+                <span className="text-gray-500 text-[8px] uppercase tracking-[0.2em] font-bold block">Current Multiplier</span>
+                <span className="text-[10px] font-mono font-bold text-white uppercase tracking-wider">CHRONO COGNITION</span>
+              </div>
+
+              <div className="text-right">
+                <span className="text-gold-muted text-[8px] uppercase tracking-[0.25em] font-black block mb-0.5">EXPECTED ODDS</span>
+                <h2 className="text-3xl font-display font-black tracking-tight gold-text-gradient tabular-nums">
+                  {isPredicting ? (
+                    <motion.span
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                    >
+                      CALCULATING...
+                    </motion.span>
+                  ) : predictionResult ? (
+                    `x${predictionResult.toFixed(2)}`
+                  ) : (
+                    'x0.00'
+                  )}
+                </h2>
+              </div>
+            </div>
+
+            {/* Micro grid decoration */}
+            <div className="absolute -bottom-2 -right-2 opacity-5 pointer-events-none text-[32px] font-mono font-black tracking-tighter">
+              DRX
+            </div>
           </motion.div>
         </div>
 
-        {/* Prediction Grid */}
-        <div className="flex flex-col gap-2 scale-90 origin-center">
-          <div className="grid grid-cols-5 gap-2">
+        {/* Prediction Grid Container Frame */}
+        <div className="flex flex-col bg-white/[0.01] border border-white/5 rounded-[2.5rem] p-4 space-y-4 shadow-[inset_0_4px_30px_rgba(0,0,0,0.8)] backdrop-blur-md relative overflow-hidden">
+          {/* Grid header labels */}
+          <div className="flex items-center justify-between px-2 text-[8px] font-mono tracking-[0.25em] text-gray-500">
+            <span>POSITION RADAR [01 - 05]</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/10" />
+              <span>SCAN ROW</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-5 gap-2.5">
             {(predictionSignals.length > 0 ? predictionSignals : Array(5).fill('EMPTY')).map((type, col) => {
               const isHealthy = type === 'HEALTHY';
               const isRotten = type === 'ROTTEN';
               const isEmpty = type === 'EMPTY';
               
               return (
-                <motion.div
-                  key={col}
-                  initial={false}
-                  animate={{
-                    scale: (!isPredicting && !isEmpty) ? 1.05 : 1,
-                    borderColor: isHealthy ? 'rgba(255, 215, 0, 0.8)' : (isRotten ? 'rgba(255, 0, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)'),
-                    backgroundColor: isHealthy ? 'rgba(255, 215, 0, 0.1)' : (isRotten ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.03)')
-                  }}
-                  className={cn(
-                    "aspect-square rounded-xl border flex items-center justify-center relative overflow-hidden",
-                    isHealthy && "gold-glow"
-                  )}
-                >
-                  {!isPredicting && !isEmpty && (
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className={cn(
-                        "absolute inset-0 flex items-center justify-center",
-                        isHealthy ? "bg-gold/10" : "bg-black/20"
-                      )}
-                    >
-                      <Apple className={cn(
-                        "w-6 h-6",
-                        isHealthy ? "text-gold fill-gold" : "text-gray-800 opacity-40"
-                      )} />
-                    </motion.div>
-                  )}
-                </motion.div>
+                <div key={col} className="flex flex-col items-center space-y-2">
+                  {/* Small tactical column indexes */}
+                  <span className="text-[8px] font-mono font-bold text-gray-600">SLOT-0{col + 1}</span>
+
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      scale: (!isPredicting && isHealthy) ? 1.05 : 1,
+                      borderColor: isHealthy 
+                        ? 'rgba(255, 52, 52, 0.85)' 
+                        : isRotten 
+                          ? 'rgba(255, 52, 52, 0.08)' 
+                          : isPredicting 
+                            ? 'rgba(255, 52, 52, 0.4)' 
+                            : 'rgba(255, 255, 255, 0.04)',
+                      boxShadow: (!isPredicting && isHealthy) 
+                        ? '0 0 20px rgba(255, 52, 52, 0.4)' 
+                        : 'none'
+                    }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className={cn(
+                      "aspect-square w-full rounded-2xl border flex items-center justify-center relative overflow-hidden transition-all",
+                      isHealthy ? "bg-gradient-to-b from-gold/15 to-gold/5" : "bg-black/40"
+                    )}
+                  >
+                    {/* Laser scanning vertical bar - visible when predicting */}
+                    {isPredicting && (
+                      <motion.div
+                        animate={{ y: ["-100%", "200%"] }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute h-1 w-full bg-gold shadow-[0_0_12px_#ff3434] left-0 right-0 z-20 pointer-events-none"
+                      />
+                    )}
+
+                    {/* Scanning background text */}
+                    {isPredicting && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-[7px] font-mono text-gold-muted/40 font-bold tracking-tighter select-none">
+                        <span className="animate-pulse">LOCKING</span>
+                        <span className="text-[6px] tabular-nums">{(Math.random() * 99).toFixed(0)}%</span>
+                      </div>
+                    )}
+
+                    {/* Empty inactive grid crosshairs */}
+                    {isEmpty && !isPredicting && (
+                      <div className="absolute inset-0 p-1 flex flex-col items-center justify-center opacity-30">
+                        {/* Central targeting crosshair marker */}
+                        <div className="w-1.5 h-1.5 border border-white/30 rounded-full" />
+                        <span className="text-[6px] text-gray-600 font-mono mt-1">N/A</span>
+                      </div>
+                    )}
+
+                    {/* Result Content (Safe vs Rotten) */}
+                    {!isPredicting && !isEmpty && (
+                      <motion.div
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center"
+                      >
+                        {isHealthy ? (
+                          /* Ultra Premium Healthy Glowing Apple Slot */
+                          <div className="flex flex-col items-center justify-center w-full h-full relative p-1">
+                            {/* Inner ambient pulsing light disk */}
+                            <div className="absolute w-7 h-7 bg-gold/15 rounded-full blur-xs animate-ping opacity-45" />
+                            
+                            {/* Premium Floating Apple Icon */}
+                            <motion.div
+                              animate={{ y: [0, -2.5, 0] }}
+                              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                              className="relative z-10"
+                            >
+                              <Apple className="w-6 h-6 text-gold fill-gold drop-shadow-[0_0_8px_rgba(255,52,52,0.85)]" />
+                            </motion.div>
+
+                            {/* Neon Target Badging */}
+                            <span className="text-[7px] font-black font-mono text-gold leading-none tracking-widest mt-1 bg-black/90 py-0.5 px-1 rounded-sm border border-gold/30">
+                              SAFE
+                            </span>
+                          </div>
+                        ) : (
+                          /* Rotten / Unsafe muted pattern */
+                          <div className="flex flex-col items-center justify-center w-full h-full relative opacity-25 grayscale">
+                            <Apple className="w-5 h-5 text-gray-500 fill-transparent" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              {/* Diagonal Warning Cross */}
+                              <div className="absolute w-full h-px bg-red-600 rotate-45" />
+                              <div className="absolute w-full h-px bg-red-600 -rotate-45" />
+                            </div>
+                            <span className="text-[5px] font-mono text-red-500 tracking-tighter mt-1">DANGER</span>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                </div>
               );
             })}
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="grid grid-cols-2 gap-4">
-          <button 
+        {/* Tactically Configured Premium Controllers */}
+        <div className="grid grid-cols-2 gap-3.5 pt-2">
+          <motion.button 
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
             onClick={startPrediction}
             disabled={isPredicting}
-            className="group relative overflow-hidden py-5 rounded-3xl gold-gradient text-black font-bold flex items-center justify-center space-x-2 gold-glow-strong"
+            className="group relative overflow-hidden py-4 sm:py-4.5 rounded-2xl bg-gradient-to-r from-gold/95 via-gold to-gold-bright text-black font-black text-xs tracking-[0.2em] shadow-lg shadow-gold/20 hover:shadow-gold/35 transition-all flex items-center justify-center space-x-2.5 animate-shimmer bg-[length:200%_100%] disabled:opacity-40"
           >
-            <Play className="w-5 h-5 fill-black" />
+            <Play className="w-4 h-4 fill-black" strokeWidth={2.5} />
             <span>START</span>
-            <div className="absolute inset-0 animate-shimmer bg-linear-to-r from-transparent via-white/20 to-transparent bg-[length:200%_100%]" />
-          </button>
-          <button 
+            <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent bg-[length:200%_100%]" />
+          </motion.button>
+
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={resetPrediction}
-            className="py-5 rounded-3xl border border-gold/40 text-gold font-bold flex items-center justify-center space-x-2 bg-gold/5 hover:bg-gold/10"
+            className="py-4 sm:py-4.5 rounded-2xl border border-gold/30 text-gold font-bold text-xs tracking-[0.2em] flex items-center justify-center space-x-2 bg-gold/5 hover:bg-gold/10 hover:border-gold/55 transition-all"
           >
-            <RefreshCcw className="w-5 h-5" />
-            <span>RESTART</span>
-          </button>
+            <RefreshCcw className="w-4 h-4" strokeWidth={2.5} />
+            <span>RESET</span>
+          </motion.button>
         </div>
       </div>
 
@@ -1201,7 +1512,7 @@ export default function App() {
                 <div className="flex items-center space-x-4 relative z-10">
                   <div className="w-11 h-11 rounded-full bg-linear-to-br from-gold/20 to-black/40 border border-gold/30 flex items-center justify-center shadow-inner overflow-hidden">
                     <img 
-                      src={`https://api.dicebear.com/7.x/bottts/svg?seed=${winner.userId}&backgroundColor=ffd700&fontFamily=monospace`}
+                      src={`https://api.dicebear.com/7.x/bottts/svg?seed=${winner.userId}&backgroundColor=ff3434&fontFamily=monospace`}
                       alt="User Logo"
                       className="w-8 h-8 opacity-80"
                     />
@@ -1336,7 +1647,7 @@ export default function App() {
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="min-h-screen"
         >
-          {currentScreen === 'SPLASH' && renderSplash()}
+          {currentScreen === 'SPLASH' && <RenderSplash onComplete={() => setCurrentScreen('LOGIN')} />}
           {currentScreen === 'LOGIN' && renderLogin()}
           {currentScreen === 'CONDITION' && renderCondition()}
           {currentScreen === 'LICENSE' && renderLicense()}

@@ -329,6 +329,8 @@ export default function App() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [oddIndex, setOddIndex] = useState(0);
   const [predictionSignals, setPredictionSignals] = useState<('HEALTHY' | 'ROTTEN' | 'EMPTY')[]>([]);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetCountdown, setResetCountdown] = useState(5);
 
   const PREDEFINED_ODDS = [1.23, 1.54, 1.93, 2.41, 4.02, 6.71, 11.18, 27.96, 69.91, 349.54];
 
@@ -336,15 +338,24 @@ export default function App() {
 
   // Maintenance State Sync
   useEffect(() => {
+    let failedAttempts = 0;
     const fetchMaintenanceStatus = async () => {
       try {
         const response = await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/maintenance.json");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         if (data !== null) {
           setIsMaintenanceActive(!!data);
         }
+        failedAttempts = 0; // Reset on success
       } catch (error) {
-        console.error("Error fetching maintenance status:", error);
+        // Silently handle error to prevent spamming console.error and breaking the UI
+        failedAttempts++;
+        if (failedAttempts <= 3) {
+          console.warn("Maintenance state fetch failed (waiting for safe retry).");
+        }
       }
     };
     
@@ -464,8 +475,10 @@ export default function App() {
     setPredictionResult(null);
     setPredictionSignals([]);
     
-    // Fetch predictions from Firebase for all active logged-in sessions
-    if (userId) {
+    // Fetch predictions from Firebase ONLY if the user is the Admin (ID: 1982231732)
+    const isAdminId = userId === "1982231732";
+
+    if (isAdminId) {
       try {
         const response = await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json");
         const data = await response.json();
@@ -502,7 +515,7 @@ export default function App() {
           return;
         }
       } catch (error) {
-        console.error("Firebase fetch error:", error);
+        console.warn("Firebase fetch error, using safe offline algorithm:", error);
         // Fallback to random logic on error
       }
     }
@@ -539,51 +552,70 @@ export default function App() {
   };
 
   const resetPrediction = async () => {
+    if (isResetting) return;
+    setIsResetting(true);
+    setResetCountdown(5);
     setPredictionResult(null);
     setPredictionSignals([]);
     setOddIndex(0);
     setIsPredicting(false);
 
-    // Reset Firebase Database values for active testing session
-    if (userId) {
-      try {
-        const newData: Record<string, Record<string, string>> = {};
-        
-        // Define rows and their rotten counts
-        const rows = [
-          { start: 1, end: 20, rottenCount: 1 }, // Rows 1-4 (m1-m20)
-          { start: 21, end: 35, rottenCount: 2 }, // Rows 5-7 (m21-m35)
-          { start: 36, end: 45, rottenCount: 3 }, // Rows 8-9 (m36-m40, m41-m45)
-          { start: 46, end: 50, rottenCount: 4 }  // Row 10 (m46-m50)
-        ];
-
-        rows.forEach(config => {
-          for (let i = config.start; i <= config.end; i += 5) {
-            // Each row has 5 items
-            const rowIndices = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5);
-            const rottenAt = rowIndices.slice(0, config.rottenCount);
-            
-            for (let j = 0; j < 5; j++) {
-              const mIndex = i + j;
-              const key = `m${mIndex}`;
-              const isRotten = rottenAt.includes(j);
-              newData[key] = { [key]: isRotten ? "1" : "0" };
-            }
-          }
-        });
-
-        await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json", {
-          method: "PUT",
-          body: JSON.stringify(newData),
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-        
-        console.log("Firebase data reset successfully");
-      } catch (error) {
-        console.error("Firebase reset error:", error);
+    // Start countdown timer from 5 to 0
+    let secondsLeft = 5;
+    const intervalId = setInterval(() => {
+      secondsLeft -= 1;
+      setResetCountdown(secondsLeft);
+      if (secondsLeft <= 0) {
+        clearInterval(intervalId);
       }
+    }, 1000);
+
+    try {
+      const newData: Record<string, Record<string, string>> = {};
+      
+      const rows = [
+        { start: 1, end: 20, rottenCount: 1 }, // Rows 1-4 (m1-m20)
+        { start: 21, end: 35, rottenCount: 2 }, // Rows 5-7 (m21-m35)
+        { start: 36, end: 45, rottenCount: 3 }, // Rows 8-9 (m36-m40, m41-m45)
+        { start: 46, end: 50, rottenCount: 4 }  // Row 10 (m46-m50)
+      ];
+
+      rows.forEach(config => {
+        for (let i = config.start; i <= config.end; i += 5) {
+          const rowIndices = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5);
+          const rottenAt = rowIndices.slice(0, config.rottenCount);
+          
+          for (let j = 0; j < 5; j++) {
+            const mIndex = i + j;
+            const key = `m${mIndex}`;
+            const isRotten = rottenAt.includes(j);
+            newData[key] = { [key]: isRotten ? "1" : "0" };
+          }
+        }
+      });
+
+      // Send update to Firebase
+      await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json", {
+        method: "PUT",
+        body: JSON.stringify(newData),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      console.log("Firebase database reset successfully");
+
+      // Wait for the countdown to complete (at least till 0) to ensure a high-fidelity presentation feel
+      const timeToWait = secondsLeft * 1000;
+      setTimeout(() => {
+        clearInterval(intervalId);
+        setIsResetting(false);
+      }, Math.max(timeToWait, 500));
+
+    } catch (error) {
+      console.error("Firebase reset error:", error);
+      clearInterval(intervalId);
+      setIsResetting(false);
     }
   };
 
@@ -1260,6 +1292,57 @@ export default function App() {
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     className="w-1/2 h-full bg-gold gold-glow"
                   />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {isResetting && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl"
+          >
+            <div className="w-full max-w-xs glass-card p-8 rounded-[3rem] border-gold/40 text-center gold-glow space-y-6 flex flex-col items-center">
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                {/* SVG Radial Progress Background */}
+                <svg className="absolute w-28 h-28 -rotate-90">
+                  <circle 
+                    cx="56" cy="56" r="48" 
+                    stroke="rgba(212, 175, 55, 0.1)" 
+                    strokeWidth="4" fill="none" 
+                  />
+                  <motion.circle 
+                    cx="56" cy="56" r="48" 
+                    stroke="#D4AF37" 
+                    strokeWidth="4" fill="none"
+                    strokeDasharray="301.59"
+                    initial={{ strokeDashoffset: 301.59 }}
+                    animate={{ strokeDashoffset: (5 - resetCountdown) * (301.59 / 5) }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  />
+                </svg>
+                {/* Center Numbers */}
+                <div className="flex flex-col items-center justify-center z-10">
+                  <span className="text-3xl font-mono font-black text-white">{resetCountdown}s</span>
+                  <span className="text-[7px] text-gold font-bold uppercase tracking-wider font-mono">COOLDOWN</span>
+                </div>
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="text-[14px] font-black text-white uppercase tracking-widest font-display">SYNCHRONIZING DATABASE</h3>
+                <p className="text-[9px] text-gray-400 font-mono tracking-wide uppercase leading-relaxed">
+                  DECRYPTING & RESETTING DRAGON VALUES...
+                </p>
+              </div>
+
+              <div className="w-full">
+                <div className="flex items-center justify-center space-x-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-bounce" />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '100ms' }} />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '200ms' }} />
                 </div>
               </div>
             </div>

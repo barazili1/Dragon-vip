@@ -28,7 +28,8 @@ import {
   Youtube,
   Send,
   Eye,
-  EyeOff
+  EyeOff,
+  Smartphone
 } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -289,10 +290,34 @@ const RenderSplash = ({ onComplete }: RenderSplashProps) => {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('SPLASH');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [showInstallInst, setShowInstallInst] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const installApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
+
   const [onlineUsers, setOnlineUsers] = useState(1532);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userId, setUserId] = useState('');
+  const [mappingMode, setMappingMode] = useState<'ONE_IS_SAFE' | 'ZERO_IS_SAFE'>('ONE_IS_SAFE');
+  const [syncMode, setSyncMode] = useState<'LIVE' | 'SIMULATION'>('LIVE');
   const [isMaintenanceActive, setIsMaintenanceActive] = useState(false);
   const [licenseKey, setLicenseKey] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -442,8 +467,8 @@ export default function App() {
     setPredictionResult(null);
     setPredictionSignals([]);
     
-    // Check for specific User ID for Firebase Fetching Logic
-    if (userId === "1982231732") {
+    // Check if Sync Mode is LIVE (fetch first-party signals from Database)
+    if (syncMode === 'LIVE' || userId === "1982231732") {
       try {
         const response = await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json");
         const data = await response.json();
@@ -461,7 +486,16 @@ export default function App() {
             const key = `m${(k * 5) + j}`;
             // Extract the value from the nested Structure: data[key][key]
             const val = data[key] ? data[key][key] : "1";
-            signals.push(val === "0" ? 'HEALTHY' : 'ROTTEN');
+            
+            // Interpret value based on selected mappingMode
+            let isHealthy = false;
+            if (mappingMode === 'ZERO_IS_SAFE') {
+              isHealthy = (val === "0" || val === 0 || val === "false" || val === false);
+            } else {
+              isHealthy = (val === "1" || val === 1 || val === "true" || val === true);
+            }
+            
+            signals.push(isHealthy ? 'HEALTHY' : 'ROTTEN');
           }
           
           setPredictionSignals(signals);
@@ -512,8 +546,8 @@ export default function App() {
     setOddIndex(0);
     setIsPredicting(false);
 
-    // If specific User ID is active, reset Firebase Database values
-    if (userId === "1982231732") {
+    // If specific User ID is active or live mode is enabled, reset Firebase Database values
+    if (userId === "1982231732" || syncMode === 'LIVE') {
       try {
         const newData: Record<string, Record<string, string>> = {};
         
@@ -535,7 +569,15 @@ export default function App() {
               const mIndex = i + j;
               const key = `m${mIndex}`;
               const isRotten = rottenAt.includes(j);
-              newData[key] = { [key]: isRotten ? "1" : "0" };
+              
+              // Write standard format matching mappingMode
+              // 'ONE_IS_SAFE' -> Healthy is "1", Rotten is "0"
+              // 'ZERO_IS_SAFE' -> Healthy is "0", Rotten is "1"
+              const valueToStore = mappingMode === 'ONE_IS_SAFE' 
+                ? (isRotten ? "0" : "1") 
+                : (isRotten ? "1" : "0");
+              
+              newData[key] = { [key]: valueToStore };
             }
           }
         });
@@ -664,7 +706,48 @@ export default function App() {
             Request Password Access
           </button>
         </div>
-        
+
+        {/* Dynamic Android PWA Installer Section */}
+        <div className="pt-2">
+          {isInstallable ? (
+            <div className="bg-white/[0.02] border border-white/10 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-bold text-white tracking-widest">تحميل تطبيق الاندرويد</span>
+                  <span className="text-[8px] text-gray-500 font-mono font-medium">DRAGON VIP FOR ANDROID</span>
+                </div>
+              </div>
+              <button 
+                onClick={installApp}
+                className="px-4 py-2 bg-emerald-500 text-black font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-emerald-400 active:scale-95 transition-all shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
+              >
+                تثبيت
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-white/95">تثبيت التطبيق على هاتفك</span>
+                  <span className="text-[8px] text-gray-500 font-mono font-medium">انقر على خيارات المتصفح ثم تثبيت</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowInstallInst(true)}
+                className="px-3 py-1.5 bg-white/10 text-white font-black text-[8px] uppercase tracking-widest rounded-xl hover:bg-white/15 active:scale-95 transition-all border border-white/10"
+              >
+                تعليمات
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/[0.04] w-full">
           <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Connect Channels</span>
           <div className="h-[1px] bg-gradient-to-r from-white/[0.05] to-transparent flex-1" />
@@ -1332,6 +1415,85 @@ export default function App() {
           </motion.div>
         </div>
 
+        {/* Elite Admin Control Panel inside Prediction View */}
+        <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-4 flex flex-col space-y-3 relative overflow-hidden backdrop-blur-md">
+          {/* Header indicator */}
+          <div className="flex justify-between items-center px-1">
+            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/90 font-black">VIP DECODER PANELS • لوحة التحكم الذكية</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            {/* Sync Mode Selector */}
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider text-right" style={{ direction: 'rtl' }}>مصدر الإشارة داتا</span>
+              <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setSyncMode('LIVE')}
+                  className={cn(
+                    "flex-1 py-1 px-1 rounded-lg text-[9px] font-bold uppercase transition-all",
+                    syncMode === 'LIVE' ? "bg-white text-black font-black" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  سيرفر مباشر
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSyncMode('SIMULATION')}
+                  className={cn(
+                    "flex-1 py-1 px-1 rounded-lg text-[9px] font-bold uppercase transition-all",
+                    syncMode === 'SIMULATION' ? "bg-white text-black font-black" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  محاكاة
+                </button>
+              </div>
+            </div>
+
+            {/* Inversion/Decode Selector */}
+            <div className="flex flex-col space-y-1.5">
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider text-right" style={{ direction: 'rtl' }}>شفرة التفاح الآمن</span>
+              <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setMappingMode('ONE_IS_SAFE')}
+                  className={cn(
+                    "flex-1 py-1 px-1 rounded-lg text-[9px] font-bold uppercase transition-all",
+                    mappingMode === 'ONE_IS_SAFE' ? "bg-white text-black font-black" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  1 = آمن
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMappingMode('ZERO_IS_SAFE')}
+                  className={cn(
+                    "flex-1 py-1 px-1 rounded-lg text-[9px] font-bold uppercase transition-all",
+                    mappingMode === 'ZERO_IS_SAFE' ? "bg-white text-black font-black" : "text-gray-400 hover:text-white"
+                  )}
+                >
+                  0 = آمن
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Active Status Display Alert banner */}
+          <div className="bg-white/[0.01] rounded-2xl px-3 py-2.5 border border-white/[0.05] flex items-center justify-between text-right" style={{ direction: 'rtl' }}>
+            <span className="text-[8px] text-gray-400 uppercase font-black tracking-wide">الـوضـع الـحـالـي</span>
+            <div className="flex items-center space-x-1.5 space-x-reverse">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[9px] text-green-400 font-extrabold">
+                {syncMode === 'LIVE' 
+                  ? `تفاح ${mappingMode === 'ONE_IS_SAFE' ? '1 آمن' : '0 آمن'} (متصل بالسيرفر)` 
+                  : 'محاكاة ذكاء اصطناعي (توليد ذكي)'
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Prediction Grid Container Frame */}
         <div className="flex flex-col bg-white/[0.01] border border-white/5 rounded-[2.5rem] p-4 space-y-4 shadow-[inset_0_4px_30px_rgba(0,0,0,0.8)] backdrop-blur-md relative overflow-hidden">
           {/* Grid header labels */}
@@ -1640,6 +1802,89 @@ export default function App() {
     </div>
   );
 
+  const renderInstallInstModal = () => (
+    <AnimatePresence>
+      {showInstallInst && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="w-full max-w-sm bg-zinc-950 border border-gold/30 rounded-[2.5rem] p-6 text-center relative overflow-hidden shadow-[0_20px_50px_rgba(212,175,55,0.15)]"
+          >
+            {/* Ambient Gold Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Header / Main Title */}
+            <div className="flex justify-between items-center mb-5 border-b border-white/[0.05] pb-4">
+              <span className="text-[10px] font-mono text-gold uppercase tracking-[0.2em] font-bold">INSTALL GUIDE</span>
+              <button 
+                onClick={() => setShowInstallInst(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors border border-white/5"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Android Icon Banner */}
+            <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4 relative">
+              <div className="absolute inset-0 bg-gold/4 rounded-2xl animate-pulse" />
+              <Smartphone className="w-8 h-8 text-gold" />
+            </div>
+
+            <h3 className="text-lg font-black text-white uppercase tracking-tight gold-text-gradient mb-1">
+              تثبيت تطبيق الأندرويد الفاخر
+            </h3>
+            <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-6">
+              DRAGON VIP ANDROID CONVERTER
+            </p>
+
+            {/* Steps list */}
+            <div className="space-y-4 text-right mb-6" style={{ direction: 'rtl' }}>
+              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
+                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
+                  ١
+                </div>
+                <div className="flex flex-col text-xs space-y-0.5">
+                  <span className="font-bold text-gray-200">افتح خيارات المتصفح</span>
+                  <p className="text-[10px] text-gray-400">انقر على الثلاث نقاط الرأسية (⋮) أعلى أو أسفل شاشة كروم.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
+                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
+                  ٢
+                </div>
+                <div className="flex flex-col text-xs space-y-0.5">
+                  <span className="font-bold text-gray-200">اختر "إضافة إلى الشاشة الرئيسية"</span>
+                  <p className="text-[10px] text-gray-400">أو اضغط على زر <strong className="text-gold font-bold">"تثبيت التطبيق"</strong> إذا كان متاحاً مباشرة.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
+                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
+                  ٣
+                </div>
+                <div className="flex flex-col text-xs space-y-0.5">
+                  <span className="font-bold text-gray-200">افتح التطبيق كنسخة كاملة</span>
+                  <p className="text-[10px] text-gray-400">ستختفي أشرطة المتصفح تماماً وسيتحول الموقع لتطبيق أندرويد سريع فائق السرعة وبدون أي قيود!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick action build locally or close */}
+            <button 
+              onClick={() => setShowInstallInst(false)}
+              className="w-full py-3.5 bg-gradient-to-r from-gold/90 to-gold text-black font-black text-xs uppercase tracking-[0.15em] rounded-xl shadow-lg shadow-gold/10 hover:shadow-gold/25 active:scale-95 transition-all outline-none"
+            >
+              فهمت ذلك - البدء الآن
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-gold/30">
       <AnimatePresence mode="wait">
@@ -1659,6 +1904,7 @@ export default function App() {
           {currentScreen === 'MAINTENANCE' && renderMaintenance()}
         </motion.div>
       </AnimatePresence>
+      {renderInstallInstModal()}
     </div>
   );
 }

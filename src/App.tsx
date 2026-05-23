@@ -697,48 +697,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* Dynamic Android PWA Installer Section */}
-        <div className="pt-2">
-          {isInstallable ? (
-            <div className="bg-white/[0.02] border border-white/10 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 text-left">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-white tracking-widest">تحميل تطبيق الاندرويد</span>
-                  <span className="text-[8px] text-gray-500 font-mono font-medium">DRAGON VIP FOR ANDROID</span>
-                </div>
-              </div>
-              <button 
-                onClick={installApp}
-                className="px-4 py-2 bg-emerald-500 text-black font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-emerald-400 active:scale-95 transition-all shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
-              >
-                تثبيت
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 text-left">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-medium text-white/95">تثبيت التطبيق على هاتفك</span>
-                  <span className="text-[8px] text-gray-500 font-mono font-medium">انقر على خيارات المتصفح ثم تثبيت</span>
-                </div>
-              </div>
-              <button 
-                onClick={() => {
-                  alert("لتثبيت تطبيق Dragon VIP على الأندرويد:\n1. من داخل متصفح كروم، اضغط على زر الخيارات (3 نقاط بالزاوية)\n2. اختر 'إضافة للشاشة الرئيسية' أو 'تثبيت التطبيق'.\nسيظهر التطبيق كأيقونة مستقلة سريعة على هاتفك!");
-                }}
-                className="px-3 py-1.5 bg-white/10 text-white font-black text-[8px] uppercase tracking-widest rounded-xl hover:bg-white/15 active:scale-95 transition-all border border-white/10"
-              >
-                تعليمات
-              </button>
-            </div>
-          )}
-        </div>
+
 
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/[0.04] w-full">
           <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Connect Channels</span>

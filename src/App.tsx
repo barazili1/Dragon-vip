@@ -553,6 +553,19 @@ export default function App() {
 
   const resetPrediction = async () => {
     if (isResetting) return;
+    
+    const isAdminId = userId === "1982231732";
+
+    if (!isAdminId) {
+      // For any other users, reset locally instantly and do NOT contact Firebase
+      setPredictionResult(null);
+      setPredictionSignals([]);
+      setOddIndex(0);
+      setIsPredicting(false);
+      console.log("Local prediction state reset instantly for non-admin user.");
+      return;
+    }
+
     setIsResetting(true);
     setResetCountdown(5);
     setPredictionResult(null);
@@ -603,7 +616,7 @@ export default function App() {
         }
       });
       
-      console.log("Firebase database reset successfully");
+      console.log("Firebase database reset successfully by Admin");
 
       // Wait for the countdown to complete (at least till 0) to ensure a high-fidelity presentation feel
       const timeToWait = secondsLeft * 1000;

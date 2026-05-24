@@ -484,8 +484,26 @@ export default function App() {
           
           for (let j = 1; j <= 5; j++) {
             const key = `m${(k * 5) + j}`;
-            // Extract the value from the nested Structure: data[key][key]
-            const val = data[key] ? data[key][key] : "1";
+            const rawVal = data[key];
+            let val = "1"; // Default to Rotten if not defined or empty
+            
+            if (rawVal !== undefined && rawVal !== null) {
+              if (typeof rawVal === 'object') {
+                if (rawVal[key] !== undefined) {
+                  val = String(rawVal[key]);
+                } else if (rawVal.value !== undefined) {
+                  val = String(rawVal.value);
+                } else {
+                  // Fallback to the first available property
+                  const entries = Object.values(rawVal);
+                  if (entries.length > 0) {
+                    val = String(entries[0]);
+                  }
+                }
+              } else {
+                val = String(rawVal);
+              }
+            }
             signals.push(val === "0" ? 'HEALTHY' : 'ROTTEN');
           }
           

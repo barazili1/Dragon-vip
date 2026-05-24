@@ -292,6 +292,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('SPLASH');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [showInstallInst, setShowInstallInst] = useState(false);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -329,8 +330,8 @@ export default function App() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [oddIndex, setOddIndex] = useState(0);
   const [predictionSignals, setPredictionSignals] = useState<('HEALTHY' | 'ROTTEN' | 'EMPTY')[]>([]);
-  const [isResetting, setIsResetting] = useState(false);
-  const [resetCountdown, setResetCountdown] = useState(5);
+  const [isAdminUploading, setIsAdminUploading] = useState(false);
+  const [adminUploadSuccess, setAdminUploadSuccess] = useState(false);
 
   const PREDEFINED_ODDS = [1.23, 1.54, 1.93, 2.41, 4.02, 6.71, 11.18, 27.96, 69.91, 349.54];
 
@@ -338,24 +339,15 @@ export default function App() {
 
   // Maintenance State Sync
   useEffect(() => {
-    let failedAttempts = 0;
     const fetchMaintenanceStatus = async () => {
       try {
         const response = await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/maintenance.json");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
         const data = await response.json();
         if (data !== null) {
           setIsMaintenanceActive(!!data);
         }
-        failedAttempts = 0; // Reset on success
       } catch (error) {
-        // Silently handle error to prevent spamming console.error and breaking the UI
-        failedAttempts++;
-        if (failedAttempts <= 3) {
-          console.warn("Maintenance state fetch failed (waiting for safe retry).");
-        }
+        console.error("Error fetching maintenance status:", error);
       }
     };
     
@@ -475,10 +467,8 @@ export default function App() {
     setPredictionResult(null);
     setPredictionSignals([]);
     
-    // Fetch predictions from Firebase ONLY if the user is the Admin (ID: 1982231732)
-    const isAdminId = userId === "1982231732";
-
-    if (isAdminId) {
+    // Check for specific User ID for Firebase Fetching Logic
+    if (userId === "1982231732") {
       try {
         const response = await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json");
         const data = await response.json();
@@ -494,18 +484,8 @@ export default function App() {
           
           for (let j = 1; j <= 5; j++) {
             const key = `m${(k * 5) + j}`;
-            const rawVal = data[key];
-            let val = "1";
-            
-            if (rawVal !== undefined && rawVal !== null) {
-              if (typeof rawVal === 'object' && rawVal[key] !== undefined) {
-                val = String(rawVal[key]);
-              } else {
-                val = String(rawVal);
-              }
-            }
-            
-            // "0" represents HEALTHY (SAFE), "1" represents ROTTEN (DANGER)
+            // Extract the value from the nested Structure: data[key][key]
+            const val = data[key] ? data[key][key] : "1";
             signals.push(val === "0" ? 'HEALTHY' : 'ROTTEN');
           }
           
@@ -515,7 +495,7 @@ export default function App() {
           return;
         }
       } catch (error) {
-        console.warn("Firebase fetch error, using safe offline algorithm:", error);
+        console.error("Firebase fetch error:", error);
         // Fallback to random logic on error
       }
     }
@@ -552,45 +532,62 @@ export default function App() {
   };
 
   const resetPrediction = async () => {
-    if (isResetting) return;
-    
-    const isAdminId = userId === "1982231732";
-
-    if (!isAdminId) {
-      // For any other users, reset locally instantly and do NOT contact Firebase
-      setPredictionResult(null);
-      setPredictionSignals([]);
-      setOddIndex(0);
-      setIsPredicting(false);
-      console.log("Local prediction state reset instantly for non-admin user.");
-      return;
-    }
-
-    setIsResetting(true);
-    setResetCountdown(5);
     setPredictionResult(null);
     setPredictionSignals([]);
     setOddIndex(0);
     setIsPredicting(false);
 
-    // Start countdown timer from 5 to 0
-    let secondsLeft = 5;
-    const intervalId = setInterval(() => {
-      secondsLeft -= 1;
-      setResetCountdown(secondsLeft);
-      if (secondsLeft <= 0) {
-        clearInterval(intervalId);
-      }
-    }, 1000);
+    // If specific Admin ID is active, reset predictions in Firebase Database too by generating fresh random sequences
+    if (userId === "1982231732") {
+      try {
+        const newData: Record<string, Record<string, string>> = {};
+        
+        const rows = [
+          { start: 1, end: 20, rottenCount: 1 }, 
+          { start: 21, end: 35, rottenCount: 2 }, 
+          { start: 36, end: 45, rottenCount: 3 }, 
+          { start: 46, end: 50, rottenCount: 4 }  
+        ];
 
+        rows.forEach(config => {
+          for (let i = config.start; i <= config.end; i += 5) {
+            const rowIndices = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5);
+            const rottenAt = rowIndices.slice(0, config.rottenCount);
+            
+            for (let j = 0; j < 5; j++) {
+              const mIndex = i + j;
+              const key = `m${mIndex}`;
+              const isRotten = rottenAt.includes(j);
+              newData[key] = { [key]: isRotten ? "1" : "0" };
+            }
+          }
+        });
+
+        await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json", {
+          method: "PUT",
+          body: JSON.stringify(newData),
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+        console.log("Firebase predictions randomized and reset successfully");
+      } catch (error) {
+        console.error("Firebase reset error:", error);
+      }
+    }
+  };
+
+  const adminUploadPredictions = async () => {
+    setIsAdminUploading(true);
+    setAdminUploadSuccess(false);
     try {
       const newData: Record<string, Record<string, string>> = {};
       
       const rows = [
-        { start: 1, end: 20, rottenCount: 1 }, // Rows 1-4 (m1-m20)
-        { start: 21, end: 35, rottenCount: 2 }, // Rows 5-7 (m21-m35)
-        { start: 36, end: 45, rottenCount: 3 }, // Rows 8-9 (m36-m40, m41-m45)
-        { start: 46, end: 50, rottenCount: 4 }  // Row 10 (m46-m50)
+        { start: 1, end: 20, rottenCount: 1 }, 
+        { start: 21, end: 35, rottenCount: 2 }, 
+        { start: 36, end: 45, rottenCount: 3 }, 
+        { start: 46, end: 50, rottenCount: 4 }  
       ];
 
       rows.forEach(config => {
@@ -607,8 +604,7 @@ export default function App() {
         }
       });
 
-      // Send update to Firebase
-      await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json", {
+      const response = await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/m11.json", {
         method: "PUT",
         body: JSON.stringify(newData),
         headers: {
@@ -616,19 +612,16 @@ export default function App() {
         }
       });
       
-      console.log("Firebase database reset successfully by Admin");
-
-      // Wait for the countdown to complete (at least till 0) to ensure a high-fidelity presentation feel
-      const timeToWait = secondsLeft * 1000;
-      setTimeout(() => {
-        clearInterval(intervalId);
-        setIsResetting(false);
-      }, Math.max(timeToWait, 500));
-
+      if (response.ok) {
+        setAdminUploadSuccess(true);
+        setTimeout(() => setAdminUploadSuccess(false), 5000);
+      } else {
+        throw new Error("Failed to upload predictions to Firebase");
+      }
     } catch (error) {
-      console.error("Firebase reset error:", error);
-      clearInterval(intervalId);
-      setIsResetting(false);
+      console.error("Firebase admin upload error:", error);
+    } finally {
+      setIsAdminUploading(false);
     }
   };
 
@@ -742,7 +735,46 @@ export default function App() {
           </button>
         </div>
 
-
+        {/* Dynamic Android PWA Installer Section */}
+        <div className="pt-2">
+          {isInstallable ? (
+            <div className="bg-white/[0.02] border border-white/10 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-bold text-white tracking-widest">تحميل تطبيق الاندرويد</span>
+                  <span className="text-[8px] text-gray-500 font-mono font-medium">DRAGON VIP FOR ANDROID</span>
+                </div>
+              </div>
+              <button 
+                onClick={installApp}
+                className="px-4 py-2 bg-emerald-500 text-black font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-emerald-400 active:scale-95 transition-all shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
+              >
+                تثبيت
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-white/95">تثبيت التطبيق على هاتفك</span>
+                  <span className="text-[8px] text-gray-500 font-mono font-medium">انقر على خيارات المتصفح ثم تثبيت</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowInstallInst(true)}
+                className="px-3 py-1.5 bg-white/10 text-white font-black text-[8px] uppercase tracking-widest rounded-xl hover:bg-white/15 active:scale-95 transition-all border border-white/10"
+              >
+                تعليمات
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/[0.04] w-full">
           <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Connect Channels</span>
@@ -1310,57 +1342,6 @@ export default function App() {
             </div>
           </motion.div>
         )}
-
-        {isResetting && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl"
-          >
-            <div className="w-full max-w-xs glass-card p-8 rounded-[3rem] border-gold/40 text-center gold-glow space-y-6 flex flex-col items-center">
-              <div className="relative w-28 h-28 flex items-center justify-center">
-                {/* SVG Radial Progress Background */}
-                <svg className="absolute w-28 h-28 -rotate-90">
-                  <circle 
-                    cx="56" cy="56" r="48" 
-                    stroke="rgba(212, 175, 55, 0.1)" 
-                    strokeWidth="4" fill="none" 
-                  />
-                  <motion.circle 
-                    cx="56" cy="56" r="48" 
-                    stroke="#D4AF37" 
-                    strokeWidth="4" fill="none"
-                    strokeDasharray="301.59"
-                    initial={{ strokeDashoffset: 301.59 }}
-                    animate={{ strokeDashoffset: (5 - resetCountdown) * (301.59 / 5) }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                  />
-                </svg>
-                {/* Center Numbers */}
-                <div className="flex flex-col items-center justify-center z-10">
-                  <span className="text-3xl font-mono font-black text-white">{resetCountdown}s</span>
-                  <span className="text-[7px] text-gold font-bold uppercase tracking-wider font-mono">COOLDOWN</span>
-                </div>
-              </div>
-              
-              <div className="space-y-1.5">
-                <h3 className="text-[14px] font-black text-white uppercase tracking-widest font-display">SYNCHRONIZING DATABASE</h3>
-                <p className="text-[9px] text-gray-400 font-mono tracking-wide uppercase leading-relaxed">
-                  DECRYPTING & RESETTING DRAGON VALUES...
-                </p>
-              </div>
-
-              <div className="w-full">
-                <div className="flex items-center justify-center space-x-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-bounce" />
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '100ms' }} />
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '200ms' }} />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {/* Top Bar */}
@@ -1385,6 +1366,12 @@ export default function App() {
               <span className="px-1 py-0.2 text-[6px] font-mono font-bold bg-white/10 text-white rounded-xs border border-white/20">PRO</span>
             </div>
             <p className="text-[9px] text-gray-300 font-mono tracking-wider mt-1">ID: {userId || 'GUEST_77889'}</p>
+            {userId === "1982231732" && (
+              <div className="flex items-center space-x-1.5 mt-1 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                <span className="text-[8px] text-gold tracking-widest font-mono uppercase font-bold">LIVE ADMIN DB SYNC</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1759,6 +1746,51 @@ export default function App() {
             </button>
           </div>
 
+          {/* Admin Predictions Control Block */}
+          <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-right space-y-4">
+            <div className="flex flex-col text-right">
+              <span className="text-sm font-bold text-gray-200 block">تحديث توقعات فايربيس</span>
+              <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono mt-1">UPDATE FIREBASE PREDICTIONS</span>
+            </div>
+            
+            <p className="text-[11px] text-gray-400 text-right leading-relaxed" style={{ direction: 'rtl' }}>
+              توليد وحفظ توقعات تفاعلية جديدة مباشرة في قاعدة بيانات الفايربيس (m11.json). سيقوم المستخدمون الذين يكتبون معرف الأدمن بالاطلاع عليها مباشرة عند الضغط على زر التفعيل.
+            </p>
+
+            <button 
+              onClick={adminUploadPredictions}
+              disabled={isAdminUploading}
+              className={cn(
+                "w-full py-3.5 rounded-2xl font-black text-xs tracking-widest transition-all shadow-md select-none flex items-center justify-center gap-2",
+                isAdminUploading 
+                  ? "bg-white/10 text-white/40 cursor-not-allowed" 
+                  : adminUploadSuccess 
+                    ? "bg-emerald-500 text-black shadow-emerald-500/20" 
+                    : "bg-gradient-to-r from-gold/90 via-gold to-gold-bright text-black hover:scale-[1.01] active:scale-[0.99]"
+              )}
+            >
+              {isAdminUploading ? (
+                <>
+                  <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
+                  <span>جاري الرفع...</span>
+                </>
+              ) : adminUploadSuccess ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>تم الرفع بنجاح!</span>
+                </>
+              ) : (
+                <span>تحديث التوقعات في Firebase</span>
+              )}
+            </button>
+            
+            {adminUploadSuccess && (
+              <p className="text-[10px] text-emerald-400 text-center animate-pulse">
+                تم دمج التوقعات بنجاح في m11.json
+              </p>
+            )}
+          </div>
+
           <button 
             onClick={() => setCurrentScreen('LOGIN')}
             className="w-full py-4 text-[10px] font-black text-gold border border-gold/20 rounded-2xl hover:bg-gold/5 transition-all tracking-[0.2em]"
@@ -1768,6 +1800,89 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+
+  const renderInstallInstModal = () => (
+    <AnimatePresence>
+      {showInstallInst && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="w-full max-w-sm bg-zinc-950 border border-gold/30 rounded-[2.5rem] p-6 text-center relative overflow-hidden shadow-[0_20px_50px_rgba(212,175,55,0.15)]"
+          >
+            {/* Ambient Gold Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Header / Main Title */}
+            <div className="flex justify-between items-center mb-5 border-b border-white/[0.05] pb-4">
+              <span className="text-[10px] font-mono text-gold uppercase tracking-[0.2em] font-bold">INSTALL GUIDE</span>
+              <button 
+                onClick={() => setShowInstallInst(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors border border-white/5"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Android Icon Banner */}
+            <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4 relative">
+              <div className="absolute inset-0 bg-gold/4 rounded-2xl animate-pulse" />
+              <Smartphone className="w-8 h-8 text-gold" />
+            </div>
+
+            <h3 className="text-lg font-black text-white uppercase tracking-tight gold-text-gradient mb-1">
+              تثبيت تطبيق الأندرويد الفاخر
+            </h3>
+            <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-6">
+              DRAGON VIP ANDROID CONVERTER
+            </p>
+
+            {/* Steps list */}
+            <div className="space-y-4 text-right mb-6" style={{ direction: 'rtl' }}>
+              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
+                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
+                  ١
+                </div>
+                <div className="flex flex-col text-xs space-y-0.5">
+                  <span className="font-bold text-gray-200">افتح خيارات المتصفح</span>
+                  <p className="text-[10px] text-gray-400">انقر على الثلاث نقاط الرأسية (⋮) أعلى أو أسفل شاشة كروم.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
+                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
+                  ٢
+                </div>
+                <div className="flex flex-col text-xs space-y-0.5">
+                  <span className="font-bold text-gray-200">اختر "إضافة إلى الشاشة الرئيسية"</span>
+                  <p className="text-[10px] text-gray-400">أو اضغط على زر <strong className="text-gold font-bold">"تثبيت التطبيق"</strong> إذا كان متاحاً مباشرة.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
+                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
+                  ٣
+                </div>
+                <div className="flex flex-col text-xs space-y-0.5">
+                  <span className="font-bold text-gray-200">افتح التطبيق كنسخة كاملة</span>
+                  <p className="text-[10px] text-gray-400">ستختفي أشرطة المتصفح تماماً وسيتحول الموقع لتطبيق أندرويد سريع فائق السرعة وبدون أي قيود!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick action build locally or close */}
+            <button 
+              onClick={() => setShowInstallInst(false)}
+              className="w-full py-3.5 bg-gradient-to-r from-gold/90 to-gold text-black font-black text-xs uppercase tracking-[0.15em] rounded-xl shadow-lg shadow-gold/10 hover:shadow-gold/25 active:scale-95 transition-all outline-none"
+            >
+              فهمت ذلك - البدء الآن
+            </button>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 
   return (
@@ -1789,6 +1904,7 @@ export default function App() {
           {currentScreen === 'MAINTENANCE' && renderMaintenance()}
         </motion.div>
       </AnimatePresence>
+      {renderInstallInstModal()}
     </div>
   );
 }

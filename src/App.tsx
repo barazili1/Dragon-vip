@@ -1000,20 +1000,20 @@ export default function App() {
                   <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
                     <span className="text-[12px] font-bold text-white">04</span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-white/80">Install Platform</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/80">Web Platform</span>
                 </div>
                 <a 
-                  href={selectedPlatform?.toUpperCase() === 'MELBET' ? "https://melbetegypt.com/ar/mobile#ios" : "https://eg-1xbet.com/ar/mobile"}
+                  href={selectedPlatform?.toUpperCase() === 'MELBET' ? "https://melbetegypt.com/ar" : "https://eg-1xbet.com/ar"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-5 glass-card rounded-2xl flex items-center justify-between border-white/10 group hover:border-white/40 transition-all hover:bg-white/5 cursor-pointer active:scale-[0.98] block"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
-                      <Download className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
+                      <ExternalLink className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
                     </div>
                     <span className="text-sm font-medium text-white/90">
-                      Download <span className="text-white font-bold">{selectedPlatform}</span> Official APK
+                      Open <span className="text-white font-bold">{selectedPlatform}</span> Official Website
                     </span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />

@@ -735,47 +735,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Dynamic Android PWA Installer Section */}
-        <div className="pt-2">
-          {isInstallable ? (
-            <div className="bg-white/[0.02] border border-white/10 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 text-left">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-white tracking-widest">تحميل تطبيق الاندرويد</span>
-                  <span className="text-[8px] text-gray-500 font-mono font-medium">DRAGON VIP FOR ANDROID</span>
-                </div>
-              </div>
-              <button 
-                onClick={installApp}
-                className="px-4 py-2 bg-emerald-500 text-black font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-emerald-400 active:scale-95 transition-all shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
-              >
-                تثبيت
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 text-left">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-medium text-white/95">تثبيت التطبيق على هاتفك</span>
-                  <span className="text-[8px] text-gray-500 font-mono font-medium">انقر على خيارات المتصفح ثم تثبيت</span>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowInstallInst(true)}
-                className="px-3 py-1.5 bg-white/10 text-white font-black text-[8px] uppercase tracking-widest rounded-xl hover:bg-white/15 active:scale-95 transition-all border border-white/10"
-              >
-                تعليمات
-              </button>
-            </div>
-          )}
-        </div>
-
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/[0.04] w-full">
           <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest">Connect Channels</span>
           <div className="h-[1px] bg-gradient-to-r from-white/[0.05] to-transparent flex-1" />
@@ -1802,89 +1761,6 @@ export default function App() {
     </div>
   );
 
-  const renderInstallInstModal = () => (
-    <AnimatePresence>
-      {showInstallInst && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-sm bg-zinc-950 border border-gold/30 rounded-[2.5rem] p-6 text-center relative overflow-hidden shadow-[0_20px_50px_rgba(212,175,55,0.15)]"
-          >
-            {/* Ambient Gold Glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
-
-            {/* Header / Main Title */}
-            <div className="flex justify-between items-center mb-5 border-b border-white/[0.05] pb-4">
-              <span className="text-[10px] font-mono text-gold uppercase tracking-[0.2em] font-bold">INSTALL GUIDE</span>
-              <button 
-                onClick={() => setShowInstallInst(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors border border-white/5"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Android Icon Banner */}
-            <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4 relative">
-              <div className="absolute inset-0 bg-gold/4 rounded-2xl animate-pulse" />
-              <Smartphone className="w-8 h-8 text-gold" />
-            </div>
-
-            <h3 className="text-lg font-black text-white uppercase tracking-tight gold-text-gradient mb-1">
-              تثبيت تطبيق الأندرويد الفاخر
-            </h3>
-            <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest mb-6">
-              DRAGON VIP ANDROID CONVERTER
-            </p>
-
-            {/* Steps list */}
-            <div className="space-y-4 text-right mb-6" style={{ direction: 'rtl' }}>
-              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
-                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
-                  ١
-                </div>
-                <div className="flex flex-col text-xs space-y-0.5">
-                  <span className="font-bold text-gray-200">افتح خيارات المتصفح</span>
-                  <p className="text-[10px] text-gray-400">انقر على الثلاث نقاط الرأسية (⋮) أعلى أو أسفل شاشة كروم.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
-                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
-                  ٢
-                </div>
-                <div className="flex flex-col text-xs space-y-0.5">
-                  <span className="font-bold text-gray-200">اختر "إضافة إلى الشاشة الرئيسية"</span>
-                  <p className="text-[10px] text-gray-400">أو اضغط على زر <strong className="text-gold font-bold">"تثبيت التطبيق"</strong> إذا كان متاحاً مباشرة.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 items-start bg-white/[0.01] p-3 rounded-xl border border-white/[0.03]">
-                <div className="w-5 h-5 rounded-full bg-gold/15 border border-gold/30 text-[9px] text-gold font-bold flex items-center justify-center shrink-0 mt-0.5 font-mono">
-                  ٣
-                </div>
-                <div className="flex flex-col text-xs space-y-0.5">
-                  <span className="font-bold text-gray-200">افتح التطبيق كنسخة كاملة</span>
-                  <p className="text-[10px] text-gray-400">ستختفي أشرطة المتصفح تماماً وسيتحول الموقع لتطبيق أندرويد سريع فائق السرعة وبدون أي قيود!</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick action build locally or close */}
-            <button 
-              onClick={() => setShowInstallInst(false)}
-              className="w-full py-3.5 bg-gradient-to-r from-gold/90 to-gold text-black font-black text-xs uppercase tracking-[0.15em] rounded-xl shadow-lg shadow-gold/10 hover:shadow-gold/25 active:scale-95 transition-all outline-none"
-            >
-              فهمت ذلك - البدء الآن
-            </button>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-gold/30">
       <AnimatePresence mode="wait">
@@ -1904,7 +1780,6 @@ export default function App() {
           {currentScreen === 'MAINTENANCE' && renderMaintenance()}
         </motion.div>
       </AnimatePresence>
-      {renderInstallInstModal()}
     </div>
   );
 }

@@ -7,40 +7,6 @@ import { useEffect, useRef } from 'react';
 
 export const BackgroundSystem = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      // Force muted config and programmatic play to bypass modern browser autoplay blocks
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-      video.setAttribute('playsinline', '');
-      video.setAttribute('muted', '');
-      video.setAttribute('autoplay', '');
-      
-      const playVideo = () => {
-        video.play().catch((err) => {
-          console.log("Autoplay waiting for user interaction.", err);
-        });
-      };
-
-      playVideo();
-
-      // Attempt playing on first interactions to recover autoplay
-      const userInteractions = ['click', 'touchstart', 'mousedown', 'keydown'];
-      userInteractions.forEach(event => {
-        window.addEventListener(event, playVideo, { once: true });
-      });
-
-      return () => {
-        userInteractions.forEach(event => {
-          window.removeEventListener(event, playVideo);
-        });
-      };
-    }
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -148,19 +114,6 @@ export const BackgroundSystem = () => {
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden bg-black select-none pointer-events-none">
-      {/* Immersive high fidelity luxury video background with 99% opacity */}
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute top-1/2 left-1/2 min-w-full min-h-full -translate-x-1/2 -translate-y-1/2 object-cover"
-        style={{ opacity: 0.99 }}
-      >
-        <source src="https://www.image2url.com/r2/default/videos/1780134083272-ee469f5c-87d8-4978-b3fa-c7c586f7b184.mp4" type="video/mp4" />
-      </video>
-
       {/* Royal Dark Vignette backing */}
       <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/10 to-black/80 z-1" />
       

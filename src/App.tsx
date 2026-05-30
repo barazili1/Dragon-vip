@@ -37,7 +37,7 @@ import {
   FileText
 } from 'lucide-react';
 import { cn } from './lib/utils';
-import { Screen, Winner, Leader } from './types';
+import { Screen, Winner, Leader, ElegantToast } from './types';
 import { BackgroundSystem } from './components/BackgroundSystem';
 import { ElegantLogo } from './components/ElegantLogo';
 import { RenderSplash } from './components/RenderSplash';
@@ -93,6 +93,16 @@ export default function App() {
   const [isAdminUploading, setIsAdminUploading] = useState(false);
   const [adminUploadSuccess, setAdminUploadSuccess] = useState(false);
 
+  // Elegant Notification Toasts System
+  const [toasts, setToasts] = useState<ElegantToast[]>([]);
+  const triggerToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' | 'star') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev.slice(-2), { id, message, type }]); // Keep at most 3 active toasts
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 4500);
+  }, []);
+
   const PREDEFINED_ODDS = [1.23, 1.54, 1.93, 2.41, 4.02, 6.71, 11.18, 27.96, 69.91, 349.54];
 
   const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes in seconds
@@ -129,6 +139,12 @@ export default function App() {
     try {
       localStorage.setItem('maintenance_active', String(newVal));
     } catch (_) {}
+
+    if (newVal) {
+      triggerToast('تم تفعيل بروتوكول الصيانة وإغلاق الخادم مؤقتاً!', 'warning');
+    } else {
+      triggerToast('قنوات الاتصال حية الآن! الخادم متاح بالكامل.', 'success');
+    }
 
     try {
       await fetch("https://evoioi-default-rtdb.europe-west1.firebasedatabase.app/maintenance.json", {
@@ -223,9 +239,11 @@ export default function App() {
 
   const handleVerification = () => {
     setIsVerifying(true);
+    triggerToast('بدء تجميع البيانات وفك تشفير البوابات...', 'info');
     setTimeout(() => {
       setIsVerifying(false);
       setLicenseKey('G0LD-DR4G-0N99-VIPX');
+      triggerToast('تهانينا المعمقة! تم إنشاء وتصديق كود VIP الحصري بنجاح.', 'star');
       setCurrentScreen('LICENSE');
     }, 5000);
   };
@@ -303,7 +321,7 @@ export default function App() {
       const indices = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5);
       
       for (let i = 0; i < healthyCount; i++) {
-        signals[indices[i]] = 'HEALTHY';
+         signals[indices[i]] = 'HEALTHY';
       }
       
       setPredictionSignals(signals);
@@ -359,6 +377,7 @@ export default function App() {
   const adminUploadPredictions = async () => {
     setIsAdminUploading(true);
     setAdminUploadSuccess(false);
+    triggerToast('جاري رفع حزمة البيانات الجديدة إلى Firebase m11.json...', 'info');
     try {
       const newData: Record<string, Record<string, string>> = {};
       
@@ -393,12 +412,14 @@ export default function App() {
       
       if (response.ok) {
         setAdminUploadSuccess(true);
+        triggerToast('تم تحديث وتثبيت التوقعات بنجاح في Firebase!', 'success');
         setTimeout(() => setAdminUploadSuccess(false), 5000);
       } else {
         throw new Error("Failed to upload predictions to Firebase");
       }
     } catch (error) {
       console.error("Firebase admin upload error:", error);
+      triggerToast('فشل في الاتصال بمستودع بيانات Firebase!', 'error');
     } finally {
       setIsAdminUploading(false);
     }
@@ -415,6 +436,7 @@ export default function App() {
   const handlePlatformSelect = (platform: string) => {
     setSelectedPlatform(platform);
     setShowConnectionModal(true);
+    triggerToast(`تم الربط بروتوكولياً مع بوابة ${platform.toUpperCase()} بنجاح!`, 'info');
     setTimeout(() => setShowConnectionModal(false), 2200);
   };
 
@@ -422,6 +444,7 @@ export default function App() {
     const promo = selectedPlatform?.toUpperCase() === 'MELBET' ? 'TOO3' : 'A77N';
     navigator.clipboard.writeText(promo);
     setShowCopyToast(true);
+    triggerToast(`تم نسخ بروموكود الحساب [${promo}] للـ ${selectedPlatform?.toUpperCase()} بنجاح!`, 'star');
     setTimeout(() => setShowCopyToast(false), 2000);
   };
 
@@ -431,6 +454,7 @@ export default function App() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadedImages(prev => ({ ...prev, [type]: reader.result as string }));
+        triggerToast(`تم رفع وقبول صورة إثبات ${type === 'deposit' ? 'الإيداع' : 'تفعيل البروموكود'}!`, 'success');
       };
       reader.readAsDataURL(file);
     }
@@ -441,101 +465,58 @@ export default function App() {
 
   // 1. COMPLETELY CHOSEN LUXURY LOGIN SCREEN (Futuristic Holographic Decryption Console)
   const renderLogin = () => (
-    <div className="flex flex-col h-screen h-[100dvh] p-5 max-w-md mx-auto relative overflow-hidden bg-transparent select-none justify-between font-sans">
+    <div className="flex flex-col min-h-screen h-[100dvh] justify-between p-6 max-w-md mx-auto relative overflow-hidden bg-transparent select-none font-sans">
       
-      {/* Sleek Top Metrics Ticker */}
-      <div className="flex justify-between items-center relative z-10 pt-3 px-1">
-        <div className="flex items-center gap-2.5 bg-black/70 backdrop-blur-xl py-1.5 px-3.5 rounded-full border border-purple-500/20 shadow-[0_4px_12px_rgba(168,85,247,0.15)]">
-          <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-          <motion.span 
-            key={onlineUsers}
-            initial={{ opacity: 0, y: -2 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-[9px] font-mono font-bold text-purple-200 tracking-wider flex items-center gap-1.5"
-          >
-            ACTIVE RUNNER • <span className="text-white font-black">{onlineUsers.toLocaleString()}</span>
-          </motion.span>
+      {/* Sleek Top Badge */}
+      <div className="flex justify-between items-center relative z-10 pt-2">
+        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/5 shadow-lg">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+          <span className="text-[10px] font-mono tracking-wider text-white/70">
+            الخادم نشط • {onlineUsers.toLocaleString()} متصل
+          </span>
         </div>
-        
-        <div className="flex items-center gap-2 bg-black/70 backdrop-blur-xl py-1.5 px-3.5 rounded-full border border-gold/30 shadow-[0_4px_12px_rgba(234,179,8,0.1)]">
-          <ShieldCheck className="w-3.5 h-3.5 text-gold-bright animate-bounce" />
-          <span className="text-[9px] font-mono font-black text-gold-bright tracking-widest uppercase">CORE v2.8</span>
+        <div className="text-[10px] font-mono text-gold-bright tracking-widest bg-gold/10 px-3 py-1.5 rounded-full border border-gold/20 font-black">
+          VIP PORTAL
         </div>
       </div>
 
-      {/* Hero Capsule Glass Panel */}
-      <div className="flex-grow flex flex-col items-center justify-center relative z-10 w-full px-1 my-auto max-h-[80%]">
+      {/* Hero Core Segment */}
+      <div className="flex-grow flex flex-col justify-center items-center relative z-10 w-full my-auto py-4">
         
-        {/* Elite Branding Center */}
-        <div className="text-center space-y-3.5 mb-5">
-          <div className="relative inline-block">
-            {/* Animated High Tech Rotating Outer Glow Rings */}
-            <motion.div 
-              animate={{ rotate: 360 }}
-              transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-4 rounded-full border border-dashed border-purple-500/15 pointer-events-none"
-            />
-            <motion.div 
-              animate={{ rotate: -360 }}
-              transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-6 rounded-full border border-dotted border-gold/10 pointer-events-none"
-            />
-            
-            {/* Holographic central core orb background */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-gold/10 rounded-full blur-xl animate-pulse-slow" />
-            <ElegantLogo size="lg" className="relative z-10 scale-105 drop-shadow-[0_0_20px_rgba(168,85,247,0.35)]" />
-          </div>
+        {/* Logo and Headings */}
+        <div className="flex flex-col items-center text-center space-y-3 mb-6">
+          <ElegantLogo size="lg" className="drop-shadow-[0_10px_30px_rgba(168,85,247,0.25)] scale-95" />
           
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black tracking-[0.25em] text-white uppercase leading-none font-display text-center">
-              DRAGON <span className="text-purple-400">CODES</span>
+          <div className="space-y-1 mt-2">
+            <h2 className="text-3xl font-black tracking-widest text-white uppercase font-display leading-tight">
+              DRAGON <p className="inline text-purple-400 font-black">VIP</p>
             </h2>
-            <div className="flex flex-col items-center gap-1 mt-1">
-              <span className="text-white/30 text-[8px] uppercase tracking-[0.4em] font-black font-mono">
-                DECRYPTION INTERACTION PORTAL
-              </span>
-              <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-purple-500 to-transparent my-0.5" />
-              <span className="text-gold-bright text-[11px] font-bold tracking-wide bg-gold/10 px-3.5 py-0.5 rounded-full border border-gold/20 shadow-sm">
-                بوابة التشفير الذكية للفيديو
-              </span>
-            </div>
+            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto mt-1" />
+            <p className="text-white/50 text-[11px] font-medium tracking-wide mt-1">
+              أهلاً بك في البوابة الذكية لفك التشفير
+            </p>
           </div>
         </div>
 
-        {/* High-Concept Cyber Glass Box - ULTRA PREMIUM REDESIGN */}
-        <div className="w-full bg-black/60 border border-white/10 rounded-[32px] p-6.5 space-y-5.5 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.95)] backdrop-blur-3xl relative overflow-hidden">
-          {/* Neon top scanning light accent */}
-          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-90 animate-pulse" />
-          <div className="absolute top-0 left-0 w-[40px] h-[40px] bg-purple-500/10 rounded-br-full blur-md" />
-          <div className="absolute bottom-0 right-0 w-[40px] h-[40px] bg-gold/5 rounded-tl-full blur-md" />
-
-          {/* Header design metrics */}
-          <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 p-2 rounded-xl">
-            <span className="text-[8.5px] font-mono text-purple-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
-              SECURITY LAYER ACTIVE
-            </span>
-            <span className="text-[8.5px] font-mono text-gold-bright font-black uppercase tracking-widest flex items-center gap-1">
-              <Cpu className="w-3.5 h-3.5 text-gold animate-spin-slow" /> COGNITIVE SYSTEM
-            </span>
-          </div>
+        {/* Premium Obsidian Card */}
+        <div className="w-full bg-black/55 border border-white/10 rounded-[28px] p-6 space-y-5.5 shadow-[0_20px_40px_rgba(0,0,0,0.9)] backdrop-blur-2xl relative overflow-hidden">
           
-          <div className="space-y-3">
+          {/* Subtle Accent Glow */}
+          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/80 to-transparent" />
+          
+          {/* Password Input Area */}
+          <div className="space-y-2.5">
             <div className="flex justify-between items-center px-1">
-              <label className="text-[9.5px] font-mono font-black uppercase tracking-widest text-purple-200">
-                PORTAL KEY CODE SYSTEM
-              </label>
-              <label className="text-[9px] font-bold text-white/50">
-                رمز المرور للخدمة
-              </label>
+              <span className="text-[10.5px] font-bold text-white/50">رمز تفعيل الخدمة</span>
+              <span className="text-[9.5px] font-mono font-black tracking-widest text-purple-300">KEY CODE</span>
             </div>
             
             <div className="relative">
               {/* Outer input aura */}
-              <div className="absolute -inset-1 rounded-2xl bg-purple-500/10 opacity-0 focus-within:opacity-100 transition-opacity blur-md" />
+              <div className="absolute -inset-0.5 rounded-xl bg-purple-500/10 opacity-0 focus-within:opacity-100 transition-opacity blur-md" />
               
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-purple-950/40 rounded-xl text-purple-300 border border-purple-500/30 shadow-inner z-10">
-                <Lock className="w-3.5 h-3.5 text-purple-400" />
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 p-1.5 bg-white/[0.03] rounded-lg text-purple-400 border border-white/5 z-10 pointer-events-none">
+                <Lock className="w-4 h-4 text-purple-400" />
               </div>
 
               <input 
@@ -543,81 +524,80 @@ export default function App() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="أدخل كود لفك التشفير..."
-                className="w-full bg-black/80 border border-white/10 focus:border-purple-500/60 rounded-2xl py-4 pl-12 pr-11 text-white font-mono text-center text-xs placeholder:text-white/20 focus:outline-none transition-all font-bold tracking-widest shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] relative z-0"
+                className="w-full bg-black/75 border border-white/10 focus:border-purple-500/50 rounded-xl py-3.5 pl-11.5 pr-11 text-white text-center text-xs tracking-wider placeholder:text-white/20 focus:outline-none transition-all font-bold shadow-inner relative z-0"
                 id="portal-password-input"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-2 text-white/40 hover:text-purple-300 transition-colors focus:outline-none z-10"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-white transition-colors focus:outline-none z-10"
                 id="toggle-pwd-button"
               >
                 {showPassword ? (
-                  <EyeOff className="w-4 h-4 text-gold-bright" />
+                  <EyeOff className="w-4 h-4 text-purple-400" />
                 ) : (
                   <Eye className="w-4 h-4" />
                 )}
               </button>
             </div>
-            
-            <p className="text-white/40 text-[9.5px] text-center font-bold tracking-wide leading-relaxed">
-              * أدخل كود تفعيل النظام المكون من 8 خانات أو أكثر لتشغيل الخدمة وتجربة الخلفية تلقائياً
-            </p>
           </div>
 
+          {/* Action button */}
           <motion.button
-            whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(168,85,247,0.45)" }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.015, boxShadow: "0 8px 25px rgba(168,85,247,0.3)" }}
+            whileTap={{ scale: 0.985 }}
             onClick={handleLogin}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-600 text-white font-black text-[11px] tracking-[0.2em] shadow-[0_8px_20px_rgba(168,85,247,0.35)] transition-all flex items-center justify-center gap-2 relative overflow-hidden font-sans uppercase border border-purple-400/30"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-black text-xs tracking-[0.15em] hover:brightness-110 transition-all flex items-center justify-center gap-2 relative overflow-hidden shadow-[0_4px_15px_rgba(168,85,247,0.2)] border border-purple-400/20"
             id="login-submit-button"
           >
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/15 to-transparent bg-[length:200%_100%] animate-shimmer pointer-events-none" />
-            <span>CONNECT DECRYPTION SYSTEM</span>
-            <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
+            <span>دخول النظام الآمن</span>
+            <ArrowRight className="w-4 h-4" strokeWidth={3} />
           </motion.button>
+
+          {/* Helper Request action */}
+          <div className="pt-2 text-center border-t border-white/5">
+            <button
+              onClick={() => setCurrentScreen('CONDITION')}
+              className="text-gold-bright hover:text-white font-black text-[11px] tracking-wide transition-all font-sans inline-flex items-center gap-1.5"
+              id="condition-trigger"
+            >
+              <span>طلب كود VIP مجاني بالكامل</span>
+              <span className="text-white/40">•</span>
+              <span className="font-mono text-[9px] text-white/60">REQUEST DECRYPT KEY</span>
+            </button>
+          </div>
+          
         </div>
       </div>
 
       {/* Brand Watermarks and Navigation linkers */}
       <div className="mt-2 text-center space-y-4 w-full relative z-10 pb-4">
-        <div className="space-y-1.5 bg-black/40 border border-purple-500/10 py-3 px-4 rounded-2xl backdrop-blur-md shadow-sm">
-          <p className="text-purple-200/50 text-[10px] font-bold">لا تملك كود تفعيل نشط مسجل حتى الآن؟</p>
-          <button 
-            onClick={() => setCurrentScreen('CONDITION')}
-            className="text-gold-bright hover:text-white font-black text-xs uppercase tracking-wider pb-0.5 border-b border-gold/30 hover:border-white transition-all font-sans"
-            id="condition-trigger"
-          >
-            طلب كود VIP مجاناً • REQUEST VIP DECRYPT CODE
-          </button>
-        </div>
-
         <div className="flex items-center justify-between gap-3 pt-1 w-full">
           <span className="text-[8.5px] font-mono text-white/30 uppercase tracking-widest font-black">DRAGON CHANNELS</span>
           <div className="h-[1px] bg-gradient-to-r from-purple-500/15 to-transparent flex-grow" />
           <div className="flex items-center gap-2.5">
             <motion.a 
-              whileHover={{ scale: 1.1, rotate: -5, boxShadow: "0 0 15px rgba(168,85,247,0.35)" }}
+              whileHover={{ scale: 1.1, rotate: -5, boxShadow: "0 0 15px rgba(0,136,204,0.4)" }}
               whileTap={{ scale: 0.9 }}
               href="https://t.me/THEAGLE2" 
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2.5 bg-black/50 rounded-xl border border-purple-500/20 text-white/70 hover:border-purple-500/60 hover:text-white transition-all shadow-md"
+              className="p-2.5 bg-black/60 rounded-xl border border-[#0088cc]/40 text-[#0088cc] hover:border-[#0088cc] transition-all shadow-md"
               id="telegram-channel-link"
             >
-              <Send className="w-3.5 h-3.5 text-purple-400" />
+              <Send className="w-4.5 h-4.5 text-[#0088cc]" fill="#0088cc" />
             </motion.a>
             <motion.a 
-              whileHover={{ scale: 1.1, rotate: 5, boxShadow: "0 0 15px rgba(234,179,8,0.35)" }}
+              whileHover={{ scale: 1.1, rotate: 5, boxShadow: "0 0 15px rgba(255,0,0,0.4)" }}
               whileTap={{ scale: 0.9 }}
               href="https://youtube.com/@dragon-p8k6q?si=OjKe5BmJbxCnTZx7" 
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2.5 bg-black/50 rounded-xl border border-gold/20 text-white/70 hover:border-gold/60 hover:text-white transition-all shadow-md"
+              className="p-2.5 bg-black/60 rounded-xl border border-[#FF0000]/40 text-[#FF0000] hover:border-[#FF0000] transition-all shadow-md"
               id="youtube-channel-link"
             >
-              <Youtube className="w-3.5 h-3.5 text-gold-bright" />
+              <Youtube className="w-4.5 h-4.5 text-[#FF0000]" fill="#FF0000" />
             </motion.a>
           </div>
         </div>
@@ -634,8 +614,8 @@ export default function App() {
               className="w-full max-w-sm bg-radial-gradient from-[#120324] to-black p-8 rounded-[36px] text-center border border-purple-500/40 shadow-[0_0_50px_rgba(168,85,247,0.4)] relative"
             >
               <div className="w-16 h-16 bg-purple-500/15 rounded-full border border-purple-500/40 flex items-center justify-center mx-auto mb-6 relative">
-                <Check className="w-8 h-8 text-purple-400" strokeWidth={4} />
-                <div className="absolute inset-0 rounded-full bg-purple-500/10 blur-xs animate-ping" />
+                 <Check className="w-8 h-8 text-purple-400" strokeWidth={4} />
+                 <div className="absolute inset-0 rounded-full bg-purple-500/10 blur-xs animate-ping" />
               </div>
               
               <h3 className="text-2xl font-black text-white font-display uppercase tracking-wider mb-2">CODES SYNCHRONIZED</h3>
@@ -822,16 +802,16 @@ export default function App() {
                     
                     {/* Immersive Videoplayer bezel frame */}
                     <a 
-                      href="https://youtu.be/aQAoaKkU0x0?si=EeulaIAis1TZkGxp" 
+                      href="https://youtu.be/DZlVd_oTtiM?si=-OsCZpYVSEx91NF1" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl block class-tutorial group"
                       id="video-tutorial-trigger"
                     >
                       <img 
-                        src="https://img.youtube.com/vi/aQAoaKkU0x0/maxresdefault.jpg" 
+                        src="https://img.youtube.com/vi/DZlVd_oTtiM/hqdefault.jpg" 
                         alt="Dragon VIP Video Tutorial" 
-                        className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:scale-105 transition-transform duration-700"
+                        className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
                         referrerPolicy="no-referrer"
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent" />
@@ -1188,8 +1168,12 @@ export default function App() {
 
   // 4. THE COCKPIT INSTRUMENT PREDICTION PANEL REDESIGNED (Gorgeous Neomorphic Cyber Grid)
   const renderPrediction = () => (
-    <div className="min-h-screen flex flex-col bg-transparent overflow-hidden max-w-lg mx-auto border-x border-white/5 relative justify-between">
+    <div className="min-h-screen flex flex-col bg-[#070114]/50 backdrop-blur-3xl overflow-hidden max-w-lg mx-auto border-x border-[#1e113a] relative justify-between pb-8">
       
+      {/* Decorative neon glow spotlights */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none z-0" />
+      <div className="absolute bottom-1/3 left-10 w-64 h-64 bg-gold/5 rounded-full blur-[90px] pointer-events-none z-0 animate-pulse-slow" />
+
       {/* Maintenance lock dialog screen overlay */}
       <AnimatePresence>
         {isMaintenanceActive && (
@@ -1199,7 +1183,7 @@ export default function App() {
             className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md"
             id="maintenance-overlay"
           >
-            <div className="w-full max-w-xs bg-radial-gradient from-[#0d0221]/95 to-black p-8 rounded-[36px] border border-gold/40 text-center space-y-5 shadow-[0_0_50px_rgba(168,85,247,0.3)] relative">
+            <div className="w-full max-w-xs bg-gradient-to-b from-[#110228]/95 to-[#000]/98 p-8 rounded-[36px] border border-gold/40 text-center space-y-5 shadow-[0_0_60px_rgba(234,179,8,0.25)] relative">
               <div className="w-14 h-14 bg-gold/15 rounded-2xl border border-gold/30 flex items-center justify-center mx-auto text-gold animate-bounce">
                 <Info className="w-7 h-7" />
               </div>
@@ -1215,80 +1199,93 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Panel Content */}
-      <div className="flex-grow flex flex-col">
+      <div className="flex-grow flex flex-col relative z-10">
         
         {/* Dynamic Top Header profile strip */}
-        <div className="p-4.5 flex justify-between items-center bg-black/70 border-b border-white/10 relative z-10 backdrop-blur-xl shadow-md">
+        <div className="p-4.5 flex justify-between items-center bg-black/60 border-b border-purple-500/15 relative z-10 backdrop-blur-2xl shadow-xl">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-11 h-11 rounded-xl bg-linear-to-br from-white/10 to-black border border-white/10 flex items-center justify-center overflow-hidden shadow-lg shadow-black/40">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#260e4c] to-black border border-purple-500/25 flex items-center justify-center overflow-hidden shadow-lg relative p-0.5">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-transparent to-gold/20 animate-spin-slow rounded-2xl" />
                 <img 
                   src={`https://api.dicebear.com/7.x/bottts/svg?seed=${userId || '778899_PRO'}&backgroundColor=a855f7&fontFamily=monospace`}
                   alt="VIP Avatar"
-                  className="w-9 h-9 opacity-90 select-none"
+                  className="w-10 h-10 rounded-xl opacity-95 relative z-10 select-none bg-black/40"
                 />
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-black rounded-full shadow-[0_0_6px_rgba(16,185,129,0.8)] animate-pulse" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-black rounded-full shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse" />
             </div>
             
             <div className="text-left space-y-0.5 select-none">
               <div className="flex items-center gap-1.5">
-                <h1 className="text-[11px] font-black tracking-widest text-white font-display">DRAGON COGNITIVE</h1>
-                <span className="px-1.5 py-0.5 text-[7px] font-mono font-black bg-gold/15 text-gold rounded border border-gold/30 font-black">PRO</span>
+                <h1 className="text-xs font-black tracking-widest text-white font-display">DRAGON COGNITIVE</h1>
+                <span className="px-1.5 py-0.5 text-[8px] font-mono font-black bg-gold/20 text-gold rounded border border-gold/40 animate-pulse">VIP PRO</span>
               </div>
-              <p className="text-[9.5px] text-white/50 font-mono tracking-wider">TARGET: {userId || 'GUEST_77889'}</p>
+              <p className="text-[9px] text-[#dac6ff]/60 font-mono tracking-wider">TARGET: {userId || 'GUEST_77889'}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full select-none shadow-inner">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,1)]" />
-            <span className="text-[10px] font-mono text-white/90 font-black uppercase tracking-widest">LIVE: {onlineUsers.toLocaleString()}</span>
+          <div className="flex items-center gap-2 bg-purple-950/20 border border-purple-500/30 px-4 py-2 rounded-2xl select-none shadow-inner">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shadow-[0_0_8px_rgba(16,185,129,1)]" />
+            <span className="text-[10px] font-mono text-emerald-400 font-extrabold uppercase tracking-widest">LIVE ACTIVE: {onlineUsers.toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Global Horizontal Chronoraph clock widget */}
-        <div className="flex items-center justify-center gap-3.5 py-4.5 bg-white/[0.01] border-b border-white/5 mt-0.5 relative z-10 select-none shadow-inner">
-          {[
-            { tag: 'HOUR', value: h },
-            { tag: 'MIN', value: m },
-            { tag: 'SEC', value: s }
-          ].map((item, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-white/[0.02] border border-white/10 rounded-xl flex items-center justify-center relative shadow-md">
-                <span className="absolute top-1 right-1 text-[5px] font-mono text-white/30 font-black tracking-normal">{item.tag}</span>
-                <span className="text-lg font-mono font-black text-white mt-1.5 tabular-nums tracking-wide">{item.value}</span>
+        {/* Global Horizontal Chronograph clock widget */}
+        <div className="flex items-center justify-center gap-3.5 py-4 bg-purple-950/10 border-b border-purple-500/10 mt-1 relative z-10 select-none shadow-inner">
+          <div className="flex items-center gap-2 bg-gold/10 border border-gold/30 px-3.5 py-2.5 rounded-2xl shadow-md">
+            <Clock className="w-4 h-4 text-gold animate-pulse" />
+            <span className="text-[9px] text-gold uppercase tracking-[0.2em] font-black">VALIDITY DECK</span>
+          </div>
+
+          <div className="h-6 w-[1px] bg-purple-500/20" />
+
+          <div className="flex items-center gap-1.5 text-white/95">
+            {[
+              { tag: 'H', value: h },
+              { tag: 'M', value: m },
+              { tag: 'S', value: s }
+            ].map((item, index) => (
+              <div key={index} className="flex items-center">
+                <div className="bg-black/40 border border-purple-500/15 rounded-xl px-2.5 py-1.5 min-w-[32px] flex flex-col items-center justify-center relative shadow-md">
+                  <span className="text-xs font-mono font-black text-white tabular-nums tracking-wide">{item.value}</span>
+                  <span className="text-[6px] font-mono text-purple-400 font-bold mt-0.5">{item.tag}</span>
+                </div>
+                {index < 2 && <span className="text-xs font-black text-gold mx-0.5 animate-pulse">:</span>}
               </div>
-            </div>
-          ))}
-          <div className="flex items-center gap-1.5 ml-2 bg-[#0e021a] border border-gold/25 px-3 py-1.5 rounded-xl shadow-md">
-            <Clock className="w-3.5 h-3.5 text-gold animate-pulse" />
-            <span className="text-[8.5px] text-white/60 uppercase tracking-widest font-black">VALIDITY DECK</span>
+            ))}
           </div>
         </div>
 
         {/* Multiplier Central Screen Sphere Dial */}
-        <div className="flex-1 px-5 flex flex-col justify-center gap-6 relative z-10 py-6">
+        <div className="flex-1 px-5 flex flex-col justify-center gap-6 relative z-10 py-5">
           
-          <div className="flex justify-center items-center relative py-2">
-            <div className="absolute inset-0 bg-gold/5 rounded-full blur-3xl pointer-events-none animate-pulse-slow" />
+          <div className="flex justify-center items-center relative py-1">
+            <div className="absolute w-52 h-52 bg-gold/10 rounded-full blur-3xl pointer-events-none animate-pulse-slow" />
             
+            {/* Holographic Target compass dial */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+              <div className="w-36 h-36 rounded-full border border-dashed border-purple-500/30 animate-[spin_40s_linear_infinite]" />
+              <div className="absolute w-28 h-28 rounded-full border border-dotted border-gold/30 animate-[spin_20s_linear_infinite_reverse]" />
+            </div>
+
             <motion.div
               animate={isPredicting ? { 
-                scale: [1, 1.05, 0.98, 1.05, 1],
-                borderColor: ['rgba(168, 85, 247, 0.25)', 'rgba(168, 85, 247, 0.85)', 'rgba(168, 85, 247, 0.25)']
+                scale: [1, 1.04, 0.98, 1.04, 1],
+                borderColor: ['rgba(234, 179, 8, 0.25)', 'rgba(234, 179, 8, 0.85)', 'rgba(234, 179, 8, 0.25)']
               } : {}}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="w-[145px] h-[92px] bg-gradient-to-b from-[#0d0221] to-black border border-white/15 rounded-[24px] flex flex-col justify-center items-center relative shadow-2xl overflow-hidden shadow-gold/10"
+              className="w-[160px] h-[105px] bg-gradient-to-b from-[#11012b] to-[#04000b] border-2 border-gold/30 rounded-[28px] flex flex-col justify-center items-center relative shadow-2xl overflow-hidden shadow-gold/10"
               id="multiplier-block"
             >
-              {/* Animated metallic shiny sweep */}
-              <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-transparent via-gold/30 to-transparent skew-x-12 translate-x-32 animate-[shimmer_3s_infinite_linear]" />
+              {/* Gold light sweep */}
+              <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-transparent via-gold/25 to-transparent skew-x-12 translate-x-36 animate-[shimmer_3s_infinite_linear]" />
               
-              <span className="text-[7.5px] font-mono text-white/40 uppercase tracking-[0.3em] font-black flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-gold" /> ODD METRIC
+              <span className="text-[8px] font-mono text-[#dac6ff]/70 uppercase tracking-[0.25em] font-black flex items-center gap-1">
+                <Cpu className="w-3.5 h-3.5 text-gold" /> ODD COEFFICIENT
               </span>
               
-              <h2 className="text-3xl font-mono font-black tracking-tight text-white tabular-nums z-10 flex items-center mt-1">
+              <h2 className="text-4xl font-mono font-black tracking-tight text-white tabular-nums z-10 flex items-center mt-1.5 drop-shadow-[0_0_12px_rgba(255,255,255,0.2)]">
                 {isPredicting ? (
                   <motion.span
                     animate={{ opacity: [0.3, 1, 0.3] }}
@@ -1305,18 +1302,25 @@ export default function App() {
             </motion.div>
           </div>
 
-          {/* Core Grid Matrix - 5 elegant vertical capsules */}
-          <div className="bg-linear-to-b from-white/[0.03] to-transparent border border-white/10 rounded-[32px] p-6 space-y-4 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between px-1 text-[8.5px] font-mono font-black tracking-widest text-white/50">
-              <span className="flex items-center gap-1.5"><Terminal className="w-3.5 h-3.5 text-gold" /> ACTIVE PATHWAY MATRIX [01-05]</span>
-              <div className="flex items-center gap-1 bg-emerald-500/10 py-1 px-2.5 rounded-full border border-emerald-500/20 text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>SECURE</span>
+          {/* Core Grid Matrix - Beautifully Framed Cyber Chamber */}
+          <div className="bg-gradient-to-b from-[#13052c]/80 to-[#060010]/95 border border-[#2e1757] rounded-[36px] p-6 space-y-4 shadow-3xl relative overflow-hidden">
+            
+            {/* Cyber Corner brackets */}
+            <div className="absolute top-2.5 left-2.5 text-purple-500/20 text-[9px] font-mono select-none">┌ VIP ┐</div>
+            <div className="absolute top-2.5 right-2.5 text-purple-500/20 text-[9px] font-mono select-none">┌ DECK ┐</div>
+            <div className="absolute bottom-2.5 left-2.5 text-purple-500/20 text-[9px] font-mono select-none">└ DRG ┘</div>
+            <div className="absolute bottom-2.5 right-2.5 text-purple-500/20 text-[9px] font-mono select-none">└ VIX ┘</div>
+
+            <div className="flex items-center justify-between px-1 text-[9px] font-mono font-black tracking-wider text-[#cca6ff]">
+              <span className="flex items-center gap-1.5"><Terminal className="w-4 h-4 text-gold" /> COGNITIVE MATRIX ACTIVE [01-05]</span>
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 py-1 px-3 rounded-full border border-emerald-500/30 text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[8px] tracking-widest font-black">SECURE</span>
               </div>
             </div>
 
             {/* KEEP GRID structure explicitly exactly as requested! (5 columns) */}
-            <div className="grid grid-cols-5 gap-3.5" id="prediction-grid-row">
+            <div className="grid grid-cols-5 gap-3.5 relative z-10" id="prediction-grid-row">
               {(predictionSignals.length > 0 ? predictionSignals : Array(5).fill('EMPTY')).map((type, col) => {
                 const isHealthy = type === 'HEALTHY';
                 const isRotten = type === 'ROTTEN';
@@ -1324,26 +1328,26 @@ export default function App() {
                 
                 return (
                   <div key={col} className="flex flex-col items-center gap-2">
-                    <span className="text-[8.5px] font-mono text-white/40 font-black tracking-wider">CH-0{col + 1}</span>
+                    <span className="text-[8.5px] font-mono text-purple-350/50 font-black tracking-wider">CH-0{col + 1}</span>
 
                     <motion.div
                       initial={false}
                       animate={{
                         scale: (!isPredicting && isHealthy) ? 1.08 : 1,
                         borderColor: isHealthy 
-                          ? 'rgba(168, 85, 247, 0.65)' 
+                          ? '#eab308' 
                           : isRotten 
                             ? 'rgba(255, 255, 255, 0.02)' 
                             : isPredicting 
-                              ? 'rgba(168, 85, 247, 0.3)' 
-                              : 'rgba(255, 255, 255, 0.06)',
+                              ? '#a855f7' 
+                              : 'rgba(168, 85, 247, 0.25)',
                         backgroundColor: isHealthy
-                          ? 'rgba(168, 85, 247, 0.04)'
-                          : 'rgba(0, 0, 0, 0.65)'
+                          ? 'rgba(234, 179, 8, 0.06)'
+                          : 'rgba(0, 0, 0, 0.7)'
                       }}
                       className={cn(
                         "aspect-square w-full rounded-2xl border flex items-center justify-center relative overflow-hidden transition-all shadow-inner border-white/5 h-[64px] w-[64px] min-h-[50px] min-w-[50px]",
-                        isHealthy ? "shadow-[inset_0_0_15px_rgba(168,85,247,0.18)]" : ""
+                        isHealthy ? "shadow-[inset_0_0_15px_rgba(234,179,8,0.25)] ring-1 ring-gold/20" : ""
                       )}
                       id={`grid-cell-${col}`}
                     >
@@ -1391,17 +1395,27 @@ export default function App() {
                                 className="relative z-10"
                                 id={`apple-icon-${col}`}
                               >
-                                <Apple className="w-6 h-6 text-white fill-white drop-shadow-[0_0_8px_var(--color-gold)]" />
+                                <img 
+                                  src="https://video11.rf.gd/apple.png" 
+                                  alt="Apple" 
+                                  className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(234,179,8,0.8)] select-none" 
+                                  referrerPolicy="no-referrer"
+                                />
                               </motion.div>
 
-                              <span className="text-[7.5px] font-mono font-black text-white tracking-widest mt-1 bg-gradient-to-r from-[#8b5cf6] via-[#d8b4fe] to-[#8b5cf6] px-1.5 py-0.5 rounded border border-white/25 scale-[0.85] leading-none uppercase">
+                              <span className="text-[7.5px] font-mono font-black text-white tracking-widest mt-1 bg-gradient-to-r from-gold via-white to-gold px-1.5 py-0.5 rounded border border-white/25 scale-[0.85] leading-none uppercase text-black">
                                 SAFE
                               </span>
                             </div>
                           ) : (
-                            /* Dark faded outline representing danger slots */
-                            <div className="flex flex-col items-center justify-center w-full h-full relative opacity-10 grayscale scale-80">
-                              <Apple className="w-5 h-5 text-white/50 fill-transparent" />
+                            /* Dark faded outline representing danger slots using custom poisoned apple image */
+                            <div className="flex flex-col items-center justify-center w-full h-full relative opacity-20 grayscale scale-90">
+                              <img 
+                                src="https://video11.rf.gd/poi.png" 
+                                alt="Poisoned Apple" 
+                                className="w-8 h-8 object-contain select-none" 
+                                referrerPolicy="no-referrer"
+                              />
                               <span className="text-[5.5px] text-white font-mono font-bold tracking-widest mt-1">DANGER</span>
                             </div>
                           )}
@@ -1415,41 +1429,41 @@ export default function App() {
           </div>
 
           {/* Action Trigger Buttons */}
-          <div className="grid grid-cols-2 gap-4 pb-2 select-none" id="controls-section">
+          <div className="grid grid-cols-2 gap-4 pb-1 select-none" id="controls-section">
             <motion.button 
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
               onClick={startPrediction}
               disabled={isPredicting}
-              className="relative overflow-hidden py-4.5 rounded-2xl bg-white text-black font-black text-xs tracking-[0.25em] font-display hover:bg-white/95 disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-[0_12px_24px_rgba(168,85,247,0.15)] group"
+              className="relative overflow-hidden py-4.5 rounded-2xl bg-gradient-to-r from-gold to-yellow-500 text-black font-black text-xs tracking-[0.25em] font-display hover:brightness-110 disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-[0_12px_24px_rgba(234,179,8,0.25)] group border border-yellow-400/30"
               id="start-pred-button"
             >
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(168,85,247,0.1)_50%,transparent_100%)] bg-[length:150%_100%] animate-shimmer pointer-events-none" />
-              <Play className="w-3.5 h-3.5 fill-black stroke-black" />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.25)_50%,transparent_100%)] bg-[length:150%_100%] animate-shimmer pointer-events-none" />
+              <Play className="w-3.5 h-3.5 fill-black stroke-black animate-pulse" />
               <span>START BEAM</span>
             </motion.button>
 
             <motion.button 
-              whileHover={{ scale: 1.02, y: -1 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
               onClick={resetPrediction}
-              className="relative overflow-hidden py-4.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 text-white font-black text-xs tracking-[0.25em] font-display transition-all flex items-center justify-center gap-2 shadow-inner"
+              className="relative overflow-hidden py-4.5 rounded-2xl bg-black/60 hover:bg-black/80 border border-purple-500/30 text-white font-black text-xs tracking-[0.25em] font-display transition-all flex items-center justify-center gap-2 shadow-inner hover:border-purple-500/60"
               id="reset-pred-button"
             >
-              <RefreshCcw className="w-3.5 h-3.5" />
+              <RefreshCcw className="w-3.5 h-3.5 text-purple-400" />
               <span>RESET REEL</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Live Scroll Winners Feed */}
-        <div className="p-5.5 bg-linear-to-b from-white/[0.02] to-transparent border-t border-white/10 pb-8 h-[360px] flex flex-col relative z-10 overflow-hidden mt-3">
+        {/* Live Scroll Winners Feed - Transformed Glass Panel */}
+        <div className="p-5 bg-gradient-to-b from-purple-950/15 to-transparent border-t border-[#1e113a] pb-8 h-[340px] flex flex-col relative z-10 overflow-hidden mt-2">
           <div className="flex items-center justify-between mb-4 shrink-0 px-2 select-none">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/95">LIVE TRANSACTION SEED</h3>
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d6c1ff]">DECRYPTED TRANSMISSION FEED</h3>
             </div>
-            <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest font-bold">SECURE CHANNEL</span>
+            <span className="text-[8px] font-mono text-[#a286df] uppercase tracking-widest font-extrabold">SECURE DECK</span>
           </div>
 
           <div className="flex-grow space-y-3 overflow-hidden custom-scrollbar" id="winners-feed-list">
@@ -1465,29 +1479,29 @@ export default function App() {
                     layout: { type: "spring", stiffness: 240, damping: 25 },
                     opacity: { duration: 0.2 }
                   }}
-                  className="p-3.5 bg-black/60 border border-white/5 hover:border-gold-bright/20 rounded-2xl flex items-center justify-between shrink-0 relative overflow-hidden transition-all shadow-inner"
+                  className="p-3.5 bg-black/50 border border-purple-500/10 hover:border-gold/30 rounded-2xl flex items-center justify-between shrink-0 relative overflow-hidden transition-all shadow-inner"
                   id={`winner-item-${winner.id}`}
                 >
                   <div className="flex items-center gap-3 relative z-10 text-left select-none">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-[#14062e] border border-purple-500/20 flex items-center justify-center overflow-hidden relative">
                       <img 
                         src={`https://api.dicebear.com/7.x/bottts/svg?seed=${winner.userId}&backgroundColor=a855f7&fontFamily=monospace`}
                         alt="Winner Badge"
-                        className="w-7.5 h-7.5 opacity-80"
+                        className="w-8 h-8 opacity-90"
                       />
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono font-black text-white">Target: {winner.userId}</span>
-                        <span className="text-[7.5px] font-bold bg-emerald-500/15 text-emerald-400 rounded px-1.5 border border-emerald-500/25">SYS_OK</span>
+                        <span className="text-xs font-mono font-black text-white/95">Target: {winner.userId}</span>
+                        <span className="text-[7.5px] font-bold bg-emerald-500/15 text-emerald-400 rounded-md px-1.5 py-0.5 border border-emerald-500/30">VERIFIED</span>
                       </div>
-                      <span className="text-[8px] text-white/45 uppercase tracking-wide font-black">Dragon Vector Revealed Successfully</span>
+                      <span className="text-[8.5px] text-[#dac6ff]/40 uppercase tracking-wide font-black">Dragon Vector Revealed Successfully</span>
                     </div>
                   </div>
                   
                   <div className="text-right relative z-10 font-sans select-none">
-                    <span className="text-sm font-black text-white drop-shadow-md">+{winner.amount} EGP</span>
-                    <span className="text-[7px] text-white/40 block font-mono font-black uppercase mt-0.5">AUTO DISPATCH</span>
+                    <span className="text-sm font-black text-gold drop-shadow-md">+{winner.amount} EGP</span>
+                    <span className="text-[7.5px] text-[#dac6ff]/40 block font-mono font-black uppercase mt-0.5">AUTO DISPATCH</span>
                   </div>
                 </motion.div>
               ))}
@@ -1495,49 +1509,49 @@ export default function App() {
           </div>
         </div>
 
-        {/* Elite Player Podium Leaderboard */}
-        <div className="px-5.5 pb-11 mt-1 relative z-10">
-          <div className="flex items-center gap-2 mb-4 px-1 pt-4 border-t border-white/10 select-none">
-            <Trophy className="w-4 h-4 text-gold" />
-            <span className="text-[9.5px] font-black uppercase tracking-[0.25em] text-white font-display">ELITE COGNITION HALL</span>
+        {/* Elite Player Podium Leaderboard - Transformed Crystallized Pillars */}
+        <div className="px-5.5 pb-8 mt-1 relative z-10">
+          <div className="flex items-center gap-2 mb-4 px-1 pt-4 border-t border-[#1e113a] select-none">
+            <Trophy className="w-4 h-4 text-gold animate-bounce" />
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#dac6ff] font-display">ELITE COGNITION HALL</span>
           </div>
           
           <div className="flex items-end justify-between gap-3 px-1 select-none" id="podium-section">
             {/* 2nd Silver Rank Column */}
             <div className="flex-1 flex flex-col items-center" id="silver-podium">
-              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-2 shadow-lg">
+              <div className="w-9 h-9 rounded-xl bg-black/40 border border-[#2e1757] flex items-center justify-center mb-2 shadow-lg">
                 <Medal className="w-5 h-5 text-slate-300" />
               </div>
-              <div className="w-full h-15 bg-gradient-to-t from-white/5 via-white/[0.01] to-transparent border-t-2 border-slate-300/30 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden px-1">
-                <span className="text-[8px] font-mono text-white/50 relative z-10">ID: {leaderboard[1].id.substring(0, 3)}***{leaderboard[1].id.substring(leaderboard[1].id.length - 2)}</span>
-                <span className="text-[10.5px] font-black text-slate-200 relative z-10 block mt-0.5">{leaderboard[1].amount.toLocaleString()} EGP</span>
+              <div className="w-full h-15 bg-gradient-to-t from-purple-500/5 via-[#11012b]/20 to-transparent border-t-2 border-slate-300/40 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden px-1">
+                <span className="text-[8px] font-mono text-[#dac6ff]/60 relative z-10">ID: {leaderboard[1].id.substring(0, 3)}***{leaderboard[1].id.substring(leaderboard[1].id.length - 2)}</span>
+                <span className="text-[11px] font-black text-slate-200 relative z-10 block mt-0.5">{leaderboard[1].amount.toLocaleString()} EGP</span>
               </div>
             </div>
 
             {/* 1st Gold Rank Column */}
             <div className="flex-1 flex flex-col items-center" id="gold-podium">
               <motion.div 
-                animate={{ y: [0, -4, 0] }}
+                animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="w-12 h-12 rounded-xl bg-gold/10 border border-gold/40 flex items-center justify-center mb-2 shadow-2xl relative"
+                className="w-12 h-12 rounded-xl bg-gold/15 border border-gold/40 flex items-center justify-center mb-2 shadow-2xl relative"
               >
                 <Trophy className="w-6 h-6 text-gold" />
-                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-black font-black flex items-center justify-center text-[9px] rounded-full border border-black shadow">1</div>
+                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gold text-black font-black flex items-center justify-center text-[9px] rounded-full border border-black shadow">1</div>
               </motion.div>
-              <div className="w-full h-22 bg-gradient-to-t from-gold/15 via-gold/[0.01] to-transparent border-t-4 border-gold/40 rounded-t-[20px] flex flex-col items-center justify-center relative overflow-hidden px-1">
-                <span className="text-[8.5px] font-mono text-white/90 relative z-10 font-black">ID: {leaderboard[0].id.substring(0, 3)}***{leaderboard[0].id.substring(leaderboard[0].id.length - 2)}</span>
-                <span className="text-xs font-black text-white relative z-10 block mt-0.5">{leaderboard[0].amount.toLocaleString()} EGP</span>
+              <div className="w-full h-22 bg-gradient-to-t from-gold/10 via-purple-500/5 to-transparent border-t-4 border-gold/50 rounded-t-[20px] flex flex-col items-center justify-center relative overflow-hidden px-1">
+                <span className="text-[8.5px] font-mono text-gold relative z-10 font-black">ID: {leaderboard[0].id.substring(0, 3)}***{leaderboard[0].id.substring(leaderboard[0].id.length - 2)}</span>
+                <span className="text-xs font-black text-white relative z-10 block mt-1">{leaderboard[0].amount.toLocaleString()} EGP</span>
               </div>
             </div>
 
             {/* 3rd Bronze Rank Column */}
             <div className="flex-1 flex flex-col items-center" id="bronze-podium">
-              <div className="w-9 h-9 border border-amber-900/30 bg-amber-950/10 rounded-xl flex items-center justify-center mb-2 shadow-lg">
-                <Medal className="w-5 h-5 text-orange-500" />
+              <div className="w-9 h-9 border border-amber-900/30 bg-black/40 rounded-xl flex items-center justify-center mb-2 shadow-lg">
+                <Medal className="w-5 h-5 text-amber-500" />
               </div>
-              <div className="w-full h-11 bg-gradient-to-t from-orange-500/[0.05] via-transparent to-transparent border-t-2 border-orange-600/30 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden px-1">
-                <span className="text-[8px] font-mono text-white/50 relative z-10">ID: {leaderboard[2].id.substring(0, 3)}***{leaderboard[2].id.substring(leaderboard[2].id.length - 2)}</span>
-                <span className="text-[10.5px] font-black text-orange-200 relative z-10 block mt-0.5">{leaderboard[2].amount.toLocaleString()} EGP</span>
+              <div className="w-full h-11 bg-gradient-to-t from-amber-500/[0.05] via-[#11012b]/20 to-transparent border-t-2 border-orange-600/40 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden px-1">
+                <span className="text-[8px] font-mono text-[#dac6ff]/60 relative z-10">ID: {leaderboard[2].id.substring(0, 3)}***{leaderboard[2].id.substring(leaderboard[2].id.length - 2)}</span>
+                <span className="text-[11px] font-black text-amber-200 relative z-10 block mt-0.5">{leaderboard[2].amount.toLocaleString()} EGP</span>
               </div>
             </div>
           </div>
@@ -1662,6 +1676,74 @@ export default function App() {
           {currentScreen === 'MAINTENANCE' && renderMaintenance()}
         </motion.div>
       </AnimatePresence>
+
+      {/* Gorgeous Floating Toast Notification System */}
+      <div className="fixed bottom-6 inset-x-4 sm:left-auto sm:right-6 sm:w-96 z-[9999] flex flex-col gap-3 pointer-events-none">
+        <AnimatePresence>
+          {toasts.map((toast) => {
+            let borderColor = "border-purple-500/30";
+            let shadowColor = "shadow-purple-500/10";
+            let iconColor = "text-purple-400";
+            let pulseBg = "bg-purple-500/10";
+            let Icon = Info;
+
+            if (toast.type === 'success') {
+              borderColor = "border-emerald-500/35";
+              shadowColor = "shadow-emerald-500/15";
+              iconColor = "text-emerald-500";
+              pulseBg = "bg-emerald-500/15";
+              Icon = CheckCircle;
+            } else if (toast.type === 'error') {
+              borderColor = "border-rose-500/35";
+              shadowColor = "shadow-rose-500/15";
+              iconColor = "text-rose-500";
+              pulseBg = "bg-rose-500/15";
+              Icon = AlertCircle;
+            } else if (toast.type === 'warning') {
+              borderColor = "border-amber-500/35";
+              shadowColor = "shadow-amber-500/15";
+              iconColor = "text-amber-500";
+              pulseBg = "bg-amber-500/15";
+              Icon = AlertCircle;
+            } else if (toast.type === 'star') {
+              borderColor = "border-gold/45";
+              shadowColor = "shadow-gold/20";
+              iconColor = "text-gold";
+              pulseBg = "bg-gold/15";
+              Icon = Sparkles;
+            }
+
+            return (
+              <motion.div
+                key={toast.id}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.85, transition: { duration: 0.2 } }}
+                layout
+                className={cn(
+                  "pointer-events-auto w-full p-4 rounded-2xl border bg-black/85 backdrop-blur-md shadow-2xl flex items-center gap-3.5 text-right relative overflow-hidden",
+                  borderColor,
+                  shadowColor
+                )}
+                style={{ direction: 'rtl' }}
+              >
+                {/* Subtle top gloss light sweep */}
+                <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 translate-x-32 animate-[shimmer_4s_infinite_linear]" />
+                
+                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border", borderColor, pulseBg)}>
+                  <Icon className={cn("w-5 h-5", iconColor)} />
+                </div>
+
+                <div className="flex-1 text-right">
+                  <p className="text-[11.5px] font-black text-white/95 leading-normal tracking-wide font-sans select-none">
+                    {toast.message}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
